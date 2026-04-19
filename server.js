@@ -1,12 +1,14 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
+const path = require('path'); // <--- ОСЬ ВІН, НАШ РЯТІВНИК!
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-app.use(express.static('public'));
+// Тепер сервер залізобетонно знайде папку public, де б він не був запущений
+app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
 let connectedPlayers = 0;
@@ -53,10 +55,9 @@ io.on('connection', (socket) => {
     // --- ЗАПУСК ГРИ ХОСТОМ ---
     socket.on('startGame', (roomId) => {
         const room = rooms[roomId];
-        if (room && room.players[0].id === socket.id) { // Перевірка, чи це Хост
+        if (room && room.players[0].id === socket.id) { 
             room.status = 'playing';
             
-            // Створюємо стартові дані гравців на сервері
             const gamePlayers = room.players.map((p, i) => ({
                 id: p.id,
                 name: p.name,
@@ -70,9 +71,8 @@ io.on('connection', (socket) => {
 
             room.gameState = { players: gamePlayers, turn: 0, currentRound: 1 };
             
-            // Відправляємо команду всім у кімнаті малювати ігрове поле
             io.to(roomId).emit('gameStarted', room.gameState);
-            io.emit('updateRoomsList', getPublicRooms()); // Ховаємо кімнату з лобі
+            io.emit('updateRoomsList', getPublicRooms()); 
             console.log(`🚀 Гра в кімнаті [${roomId}] ПОЧАЛАСЯ!`);
         }
     });
@@ -81,11 +81,8 @@ io.on('connection', (socket) => {
     socket.on('rollDice', (roomId) => {
         const room = rooms[roomId];
         if (room && room.status === 'playing') {
-            // Сервер сам генерує чесні рандомні числа!
             const v1 = Math.floor(Math.random() * 6) + 1;
             const v2 = Math.floor(Math.random() * 6) + 1;
-            
-            // Розсилаємо ці два числа ВСІМ гравцям у кімнаті
             io.to(roomId).emit('diceRolled', { v1: v1, v2: v2 });
         }
     });
@@ -121,7 +118,8 @@ function getPublicRooms() {
     }));
 }
 
-const PORT = 3000;
+// Render автоматично видає свій порт через process.env.PORT
+const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Сервер NikAndLos успішно перезапущено на порту ${PORT}!`);
+    console.log(`🚀 Сервер NikAndLos успішно працює на порту ${PORT}!`);
 });
