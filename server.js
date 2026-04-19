@@ -1,13 +1,13 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const path = require('path'); // <--- ОСЬ ВІН, НАШ РЯТІВНИК!
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Тепер сервер залізобетонно знайде папку public, де б він не був запущений
+// Роздаємо статичні файли
 app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = {};
@@ -21,7 +21,6 @@ io.on('connection', (socket) => {
     io.emit('globalOnlineCount', connectedPlayers);
     socket.emit('updateRoomsList', getPublicRooms());
 
-    // --- СТВОРЕННЯ КІМНАТИ ---
     socket.on('createRoom', (data) => {
         const roomId = Math.random().toString(36).substring(2, 7).toUpperCase(); 
         rooms[roomId] = {
@@ -37,7 +36,6 @@ io.on('connection', (socket) => {
         io.emit('updateRoomsList', getPublicRooms());
     });
 
-    // --- ПРИЄДНАННЯ ДО КІМНАТИ ---
     socket.on('joinRoom', (data) => {
         const room = rooms[data.roomId];
         if (!room) return socket.emit('joinError', 'Кімнату не знайдено!');
@@ -52,32 +50,24 @@ io.on('connection', (socket) => {
         io.emit('updateRoomsList', getPublicRooms());
     });
 
-    // --- ЗАПУСК ГРИ ХОСТОМ ---
     socket.on('startGame', (roomId) => {
         const room = rooms[roomId];
         if (room && room.players[0].id === socket.id) { 
             room.status = 'playing';
-            
             const gamePlayers = room.players.map((p, i) => ({
-                id: p.id,
-                name: p.name,
-                color: playerColors[i % playerColors.length],
+                id: p.id, name: p.name, color: playerColors[i % playerColors.length],
                 money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, 
                 inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, 
                 skipTurns: 0, skipMsg: "", reverseMove: false, 
                 portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
                 stockHistory: [], debtMode: false 
             }));
-
             room.gameState = { players: gamePlayers, turn: 0, currentRound: 1 };
-            
             io.to(roomId).emit('gameStarted', room.gameState);
             io.emit('updateRoomsList', getPublicRooms()); 
-            console.log(`🚀 Гра в кімнаті [${roomId}] ПОЧАЛАСЯ!`);
         }
     });
 
-    // --- СИНХРОНІЗАЦІЯ КУБИКА ---
     socket.on('rollDice', (roomId) => {
         const room = rooms[roomId];
         if (room && room.status === 'playing') {
@@ -87,20 +77,17 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- ВІДКЛЮЧЕННЯ ---
     socket.on('disconnect', () => {
         connectedPlayers--;
         io.emit('globalOnlineCount', connectedPlayers);
-        
         for (const roomId in rooms) {
             const room = rooms[roomId];
             const pIndex = room.players.findIndex(p => p.id === socket.id);
             if (pIndex !== -1) {
                 const wasHost = room.players[pIndex].isHost;
                 room.players.splice(pIndex, 1);
-                if (room.players.length === 0) {
-                    delete rooms[roomId];
-                } else {
+                if (room.players.length === 0) { delete rooms[roomId]; } 
+                else {
                     if (wasHost) room.players[0].isHost = true;
                     io.to(roomId).emit('roomPlayersUpdated', room.players);
                 }
@@ -112,14 +99,15 @@ io.on('connection', (socket) => {
 });
 
 function getPublicRooms() {
-    return Object.values(rooms).map(r => ({ 
-        id: r.id, name: r.name, hasPassword: r.password.length > 0, 
-        playersCount: r.players.length, status: r.status 
-    }));
+    return Object.values(rooms).map(r => ({ id: r.id, name: r.name, hasPassword: r.password.length > 0, playersCount: r.players.length, status: r.status }));
 }
 
-// Render автоматично видає свій порт через process.env.PORT
+// ЗАЛІЗОБЕТОННИЙ ФІКС "NOT FOUND": Завжди віддавати index.html
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`🚀 Сервер NikAndLos успішно працює на порту ${PORT}!`);
+    console.log(`🚀 Сервер працює на порту ${PORT}!`);
 });
