@@ -76,7 +76,10 @@ io.on('connection', (socket) => {
             io.to(roomId).emit('diceRolled', { v1: v1, v2: v2 });
         }
     });
-
+socket.on('playerAction', (roomId, actionData) => {
+        io.to(roomId).emit('syncAction', actionData);
+    });
+    
     socket.on('disconnect', () => {
         connectedPlayers--;
         io.emit('globalOnlineCount', connectedPlayers);
