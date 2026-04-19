@@ -395,7 +395,7 @@ async function startTurnLocal() {
 }
 
 async function roll2DDice() {
-  playSound('sfx-step');
+  playSound('sfx-dice');
   const d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
   d1.classList.add('rolling-anim'); d2.classList.add('rolling-anim');
   for(let i=0; i<10; i++) { render2DDie('die1', Math.floor(Math.random()*6)+1); render2DDie('die2', Math.floor(Math.random()*6)+1); await sleep(50); }
