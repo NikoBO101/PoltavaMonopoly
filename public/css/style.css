@@ -153,3 +153,47 @@ button:disabled { background: #444; cursor: not-allowed; color: #777; }
 @media (max-width: 350px) {
   .board { transform: scale(0.48); margin-bottom: -270px; }
 }
+
+
+/* ==========================================
+   АДАПТАЦІЯ ПІД ТЕЛЕФОНИ ТА ПЛАНШЕТИ 
+   ========================================== */
+
+/* Для планшетів і невеликих екранів */
+@media (max-width: 900px) {
+  /* Ставимо кнопки ПІД ігровим полем, а не збоку */
+  .game-container { flex-direction: column; align-items: center; }
+  .controls { width: 95%; max-width: 450px; margin-top: 15px; }
+  
+  /* Верхня панель гравців тепер можна гортати (свайпати) вбік */
+  .dashboard { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; width: 100%; box-sizing: border-box; }
+  .player-stat { flex-shrink: 0; min-width: 100px; }
+}
+
+/* Для стандартних смартфонів */
+@media (max-width: 600px) {
+  /* Зменшуємо дошку як картинку (на 35%) */
+  .board { 
+    transform: scale(0.65); 
+    transform-origin: top center; 
+    margin-bottom: -180px; /* Підтягуємо кнопки вгору, бо дошка стала меншою */
+  }
+  .center-logo { font-size: 20px; }
+  .menu-header { font-size: 28px; } /* Менший заголовок у головному меню */
+}
+
+/* Для вузьких екранів */
+@media (max-width: 400px) {
+  .board { 
+    transform: scale(0.55); 
+    margin-bottom: -230px; 
+  }
+}
+
+/* Для найменших телефонів */
+@media (max-width: 350px) {
+  .board { 
+    transform: scale(0.48); 
+    margin-bottom: -270px; 
+  }
+}
