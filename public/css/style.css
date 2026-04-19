@@ -136,3 +136,20 @@ button:disabled { background: #444; cursor: not-allowed; color: #777; }
 .rules-container h3 { color: #f1c40f; border-bottom: 1px solid #444; padding-bottom: 5px; margin-top: 20px;}
 .rules-container p, .rules-container li { font-size: 13px; color: #ddd; line-height: 1.5; text-align: left; margin-bottom: 8px;}
 .credits { margin-top: 30px; font-size: 11px; color: #888; text-align: center; padding-top: 10px; border-top: 1px dashed #444;}
+/* АДАПТАЦІЯ ПІД ТЕЛЕФОНИ ТА ПЛАНШЕТИ */
+@media (max-width: 900px) {
+  .game-container { flex-direction: column; align-items: center; }
+  .controls { width: 95%; max-width: 450px; margin-top: 15px; }
+  .dashboard { justify-content: flex-start; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 5px; }
+  .player-stat { flex-shrink: 0; min-width: 100px; }
+}
+@media (max-width: 600px) {
+  .board { transform: scale(0.65); transform-origin: top center; margin-bottom: -180px; }
+  .center-logo { font-size: 20px; }
+}
+@media (max-width: 400px) {
+  .board { transform: scale(0.55); margin-bottom: -230px; }
+}
+@media (max-width: 350px) {
+  .board { transform: scale(0.48); margin-bottom: -270px; }
+}
