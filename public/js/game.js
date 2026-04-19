@@ -75,7 +75,7 @@ function updateVolume() {
     let bgmVol = document.getElementById('vol-bgm') ? document.getElementById('vol-bgm').value : (document.getElementById('vol-bgm-game') ? document.getElementById('vol-bgm-game').value : 0.2);
     let sfxVol = document.getElementById('vol-sfx') ? document.getElementById('vol-sfx').value : (document.getElementById('vol-sfx-game') ? document.getElementById('vol-sfx-game').value : 0.5);
     let bgm = document.getElementById('bgm'); if(bgm) bgm.volume = bgmVol;
-    ['sfx-step', 'sfx-earn', 'sfx-spend'].forEach(id => { let el = document.getElementById(id); if(el) el.volume = sfxVol; });
+    ['sfx-dice', 'sfx-step', 'sfx-earn', 'sfx-spend', 'sfx-bankrupt'].forEach(id => { let el = document.getElementById(id); if(el) el.volume = sfxVol; });
 }
 function changeRadio() {
     let val = document.getElementById('setting-radio').value; let bgm = document.getElementById('bgm'); if(!bgm) return;
@@ -357,7 +357,7 @@ function forceBankrupt() {
     let tokenEl = document.getElementById(`token-${p.id}`); if(tokenEl) tokenEl.remove();
     stocks.GOV.issued -= p.portfolio.GOV; p.portfolio.GOV = 0;
     for(let i in properties) { if(properties[i].owner === p.id) { delete properties[i]; document.getElementById(`houses-${i}`).innerHTML = ''; document.getElementById(`cell-${i}`).classList.remove('mortgaged'); } }
-    logMsg(`💀 <b>${p.name}</b> ОГОЛОСИВ БАНКРУТСТВО! Майно повернуто банку.`); playSound('sfx-spend'); closeModal(); updateUI(); 
+    logMsg(`💀 <b>${p.name}</b> ОГОЛОСИВ БАНКРУТСТВО! Майно повернуто банку.`); playSound('sfx-bankrupt'); closeModal(); updateUI(); 
 
     let active = players.filter(pl => !pl.isBankrupt);
     if (active.length === 1) { 
