@@ -1,6 +1,3 @@
-// ==========================================
-// 1. ІНІЦІАЛІЗАЦІЯ ЗМІННИХ
-// ==========================================
 let players = []; let turn = 0; let properties = {}; let jackpotAmount = 0;
 let lastRollWasDouble = false; let lastDiceSum = 0;
 let currentModalCanClose = false; let isRolling = false; let jackpotRate = 0.5;
@@ -8,17 +5,8 @@ let currentRound = 1; let debtAlertShown = false;
 let timerInterval = null; let timeLeft = 0; let timeLimitSetting = 0; let timerAction = null;
 let isOnlineMode = false;
 
-let stocks = { 
-    PTC: { price: 500, pool: 0 }, 
-    RTL: { price: 1000, pool: 0 }, 
-    TRN: { price: 1000, pool: 0 }, 
-    PST: { price: 1000, pool: 0 }, 
-    GOV: { price: 2000, pool: 0, totalMax: 50, issued: 0 } 
-};
+let stocks = { PTC: { price: 500, pool: 0 }, RTL: { price: 1000, pool: 0 }, TRN: { price: 1000, pool: 0 }, PST: { price: 1000, pool: 0 }, GOV: { price: 2000, pool: 0, totalMax: 50, issued: 0 } };
 
-// ==========================================
-// 2. ПІДКЛЮЧЕННЯ ДО СЕРВЕРА (МУЛЬТИПЛЕЄР)
-// ==========================================
 const socket = typeof io !== 'undefined' ? io() : null;
 let myMultiplayerId = null;
 let currentLobby = null;
@@ -70,9 +58,6 @@ if(socket) {
     });
 }
 
-// ==========================================
-// 3. ІНТЕРФЕЙС ТА МЕНЮ
-// ==========================================
 document.addEventListener("DOMContentLoaded", () => { generatePlayerInputs(); updateVolume(); });
 function switchTab(tabId) { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(tabId).classList.add('active'); event.currentTarget.classList.add('active'); }
 function generatePlayerInputs() {
@@ -103,9 +88,6 @@ function updateCustomAudio(id, url) { let el = document.getElementById(id); if(e
 function uploadSFX(event, id) { const file = event.target.files[0]; if (file) { const r = new FileReader(); r.onload = function(e) { let el = document.getElementById(id); if(el) el.src = e.target.result; }; r.readAsDataURL(file); } }
 function playSound(id) { let el = document.getElementById(id); if(el && el.getAttribute('src') && el.getAttribute('src') !== "") { el.currentTime = 0; el.play().catch(e => {}); } }
 
-// ==========================================
-// 4. ДОПОМІЖНІ ФУНКЦІЇ ТА МОДАЛКИ
-// ==========================================
 function render2DDie(id, num) { let el = document.getElementById(id); if(el) el.innerHTML = dotL[num].map(v=>`<div class="dot ${v===0?'hidden':''}"></div>`).join(''); }
 function getRentArray(base) { return [base, base*5, base*15, base*40, base*50, base*60]; }
 
@@ -124,9 +106,6 @@ function startTimer(seconds, timeoutAction) {
 function stopTimer() { if(timerInterval) clearInterval(timerInterval); document.getElementById('timer-display').classList.remove('active'); }
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.getElementById('modal-overlay').style.display === 'flex' && currentModalCanClose) closeModal(); });
 
-// ==========================================
-// 5. ЛОБІ (МЕРЕЖА)
-// ==========================================
 function createRoom() {
     if(!socket) return alert("Сервер недоступний!");
     const pName = document.getElementById('mp-player-name').value.trim(); if(!pName) return alert("Введіть ваше ім'я!");
@@ -144,22 +123,11 @@ function joinRoomByCode() {
     const code = document.getElementById('mp-join-code').value.trim().toUpperCase(); if(!code) return alert("Введіть код кімнати!");
     socket.emit('joinRoom', { roomId: code, playerName: pName, password: document.getElementById('mp-join-pass').value.trim() });
 }
+// ТУТ ФІКС 404: Перезавантажуємо тільки корінь
 function leaveLobby() { window.location.reload(); }
+
 function startOnlineGameAction() { if(socket && currentLobby) { socket.emit('startGame', currentLobby.id); } }
 
-function renderLobbyPlayers(playersList) {
-    const listEl = document.getElementById('lobby-players-list'); let html = ''; let iAmHost = false;
-    playersList.forEach((p, i) => {
-        let hostBadge = p.isHost ? '👑 ' : ''; let youBadge = p.id === myMultiplayerId ? ' <span style="color:#888; font-size:12px;">(Ви)</span>' : '';
-        if(p.id === myMultiplayerId && p.isHost) iAmHost = true;
-        html += `<div class="lobby-player-item ${p.isHost ? 'is-host' : ''}" style="color:${playerColors[i % playerColors.length]}">${hostBadge}${p.name}${youBadge}</div>`;
-    });
-    listEl.innerHTML = html; document.getElementById('lobby-start-btn').style.display = iAmHost ? 'inline-block' : 'none';
-}
-
-// ==========================================
-// 6. ЗАПУСК ЛОКАЛЬНОЇ ГРИ
-// ==========================================
 function startLocalGame() {
   isOnlineMode = false;
   changeRadio(); jackpotRate = parseFloat(document.getElementById('setting-jackpot').value); timeLimitSetting = parseInt(document.getElementById('setting-timer').value); currentRound = 1;
@@ -171,9 +139,16 @@ function startLocalGame() {
   if(timeLimitSetting > 0) startTimer(timeLimitSetting, () => userClickedRoll());
 }
 
-// ==========================================
-// 7. ІГРОВЕ ПОЛЕ ТА UI
-// ==========================================
+function renderLobbyPlayers(playersList) {
+    const listEl = document.getElementById('lobby-players-list'); let html = ''; let iAmHost = false;
+    playersList.forEach((p, i) => {
+        let hostBadge = p.isHost ? '👑 ' : ''; let youBadge = p.id === myMultiplayerId ? ' <span style="color:#888; font-size:12px;">(Ви)</span>' : '';
+        if(p.id === myMultiplayerId && p.isHost) iAmHost = true;
+        html += `<div class="lobby-player-item ${p.isHost ? 'is-host' : ''}" style="color:${playerColors[i % playerColors.length]}">${hostBadge}${p.name}${youBadge}</div>`;
+    });
+    listEl.innerHTML = html; document.getElementById('lobby-start-btn').style.display = iAmHost ? 'inline-block' : 'none';
+}
+
 function getGridArea(i) { if (i <= 10) return { r: 11, c: 11 - i }; if (i <= 19) return { r: 11 - (i - 10), c: 1 }; if (i <= 30) return { r: 1, c: (i - 20) + 1 }; return { r: (i - 30) + 1, c: 11 }; }
 function initBoard() {
   document.querySelectorAll('.cell').forEach(e => e.remove()); const board = document.getElementById('board');
@@ -200,7 +175,6 @@ function updatePropertyColors() {
 
 function updateUI() {
   const dash = document.getElementById('dashboard'); dash.innerHTML = ''; let isDebtActive = players.some(p => p.debtMode);
-  
   let amIActivePlayer = true;
   if(isOnlineMode) {
       let activeP = isDebtActive ? players.find(p=>p.debtMode) : players[turn];
@@ -214,7 +188,6 @@ function updateUI() {
     let activeClass = ''; if (isDebtActive) { if(p.debtMode) activeClass = 'debt-player-stat'; } else { if(p.id === players[turn].id) activeClass = 'active-player-stat'; }
     dash.innerHTML += `<div class="player-stat ${activeClass} ${p.isBankrupt ? 'bankrupt-stat' : ''}"><div><div class="color-dot" style="background:${p.color}"></div>${p.name} ${iconHTML}</div><span style="color: ${p.money < 0 ? '#e74c3c' : '#2ecc71'};">i₴${p.money}</span>${depHTML} ${cryptoHTML}</div>`;
   });
-  
   if(!isDebtActive && !players[turn].isBankrupt) { document.getElementById('current-turn').innerHTML = `Круг ${currentRound} | Хід: <span style="color:${players[turn].color}">${players[turn].name}</span>`; }
   document.getElementById('jackpot-display').innerText = `i₴${jackpotAmount}`;
   
@@ -231,9 +204,6 @@ function updateUI() {
 
 function logMsg(msg) { const log = document.getElementById('log'); log.innerHTML = `<div style="margin-bottom:4px; border-bottom:1px solid #444; padding-bottom:3px;">${msg}</div>` + log.innerHTML; }
 
-// ==========================================
-// 8. ПОВНА ЛОГІКА МЕХАНІК ГРИ
-// ==========================================
 function showInventory() {
     let p = players.find(x => x.debtMode) || players[turn]; let html = `<div style="max-height: 300px; overflow-y: auto; text-align: left; font-size: 13px;">`; let count = 0;
     for(let i in properties) {
@@ -326,7 +296,6 @@ function repayLoan() {
   p.money -= p.loan; p.loan = 0; p.loanTurns = 0; playSound('sfx-spend'); logMsg(`💳 <b>${p.name}</b> успішно погасив борг банку.`); updateUI(); checkDebtResolution(); closeModal();
 }
 
-// --- БОРГИ ---
 function deductMoney(p, amount) { p.money -= amount; jackpotAmount += Math.ceil(amount * jackpotRate); playSound('sfx-spend'); }
 
 function processDebts() {
@@ -345,7 +314,6 @@ function processDebts() {
       document.getElementById('current-turn').innerHTML = `🚨 БОРГ: <span style="color:#e74c3c">${debtor.name}</span> (Потрібно: i₴${Math.abs(debtor.money)})`;
       updateUI();
       if(!debtAlertShown) {
-          // Якщо гра онлайн, борг покажеться тільки боржнику. Іншим просто заблокує екран
           let amIActivePlayer = (!isOnlineMode || debtor.id === myMultiplayerId);
           if(amIActivePlayer) {
               openModal(`🚨 УВАГА: БОРГ!`, `<p>Ти пішов у мінус на <b>i₴${Math.abs(debtor.money)}</b>.</p><p>Продай акції, заклади майно, візьми кредит або оголоси банкрутство (Здатися).</p>`, `<button class="btn-blue" onclick="closeModal()">Зрозуміло</button>`, false);
@@ -383,6 +351,7 @@ function giveUpConfirm() {
     openModal("🏳️ Здатися", `<p>${p.name}, ти дійсно хочеш оголосити себе банкрутом і вийти з гри?</p>`, `<button class="btn-red" onclick="forceBankrupt()">Так, я банкрут</button><button class="btn-blue" onclick="closeModal()">Ні, я ще поборюсь</button>`, true); 
 }
 
+// ТУТ ФІКС 404: Перезавантажуємо тільки корінь сайту, щоб Express не губився
 function forceBankrupt() { 
     let p = players.find(x => x.debtMode) || players[turn]; p.money = -1; p.isBankrupt = true; p.debtMode = false; p.deposit = 0; debtAlertShown = false;
     let tokenEl = document.getElementById(`token-${p.id}`); if(tokenEl) tokenEl.remove();
@@ -391,11 +360,14 @@ function forceBankrupt() {
     logMsg(`💀 <b>${p.name}</b> ОГОЛОСИВ БАНКРУТСТВО! Майно повернуто банку.`); playSound('sfx-spend'); closeModal(); updateUI(); 
 
     let active = players.filter(pl => !pl.isBankrupt);
-    if (active.length === 1) { stopTimer(); openModal("🏆 ГРУ ЗАВЕРШЕНО!", `<h1 style="color:${active[0].color}">${active[0].name} ПЕРЕМІГ!</h1>`, `<button class="btn-blue" onclick="location.reload()">Нова гра</button>`, false); return; }
+    if (active.length === 1) { 
+        stopTimer(); 
+        openModal("🏆 ГРУ ЗАВЕРШЕНО!", `<h1 style="color:${active[0].color}">${active[0].name} ПЕРЕМІГ!</h1>`, `<button class="btn-blue" onclick="window.location.reload()">Нова гра</button>`, false); 
+        return; 
+    }
     if(!processDebts()) { if(p.id === players[turn].id) nextTurn(); } 
 }
 
-// --- ХІД ТА ПОДІЇ ---
 function userClickedRoll() {
     stopTimer();
     if(isOnlineMode && socket && currentLobby) { socket.emit('rollDice', currentLobby.id); } 
@@ -624,7 +596,7 @@ function renderTradeLists() {
   let p1 = players[turn]; let p2id = parseInt(document.getElementById('trade-target').value); let p2 = players.find(x => x.id === p2id);
   const getList = (pid, prefix) => { let list = ''; for(let i in properties) { if(properties[i].owner === pid) { let c = mapData[i]; list += `<div class="trade-item"><input type="checkbox" id="${prefix}-prop-${i}" value="${i}"> <div class="color-dot" style="background:${colors[c.group]}"></div> ${c.name.replace('<br>',' ')}</div>`; } } return list === '' ? '<div style="color:#888;">Немає нерухомості</div>' : list; };
   document.getElementById('trade-ui-container').innerHTML = `<div class="trade-grid"><div class="trade-col"><h4 style="color:${p1.color}">${p1.name} (Віддає)</h4>Доплата (i₴): <input type="number" id="trade-money-give" class="trade-money-input" value="0" min="0" max="${p1.money}"><div class="trade-prop-list">${getList(p1.id, 'give')}</div></div><div class="trade-col"><h4 style="color:${p2.color}">${p2.name} (Віддає)</h4>Доплата (i₴): <input type="number" id="trade-money-take" class="trade-money-input" value="0" min="0" max="${p2.money}"><div class="trade-prop-list">${getList(p2.id, 'take')}</div></div></div>`;
-}
+};
 function submitTrade() {
   let p1 = players[turn]; let p2id = parseInt(document.getElementById('trade-target').value); let p2 = players.find(x => x.id === p2id);
   let mGive = parseInt(document.getElementById('trade-money-give').value) || 0; let mTake = parseInt(document.getElementById('trade-money-take').value) || 0;
@@ -658,7 +630,6 @@ function nextTurn() {
   
   updateUI(); 
   
-  // Якщо грає ОНЛАЙН, розблоковуємо кнопки ТІЛЬКИ для активного гравця
   let amIActivePlayer = true;
   if(isOnlineMode) { amIActivePlayer = (players[turn].id === myMultiplayerId); }
   
