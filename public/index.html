@@ -20,13 +20,12 @@
 <div id="main-menu">
   <div class="menu-header">ПОЛТАВСЬКА МОНОПОЛІЯ</div>
   <div class="menu-subheader">NIKANDLOS MULTIPLAYER EDITION</div>
-  <div class="disclaimer">Усі фінанси (i₴) в цій грі є віртуальною ігровою валютою.</div>
   
   <div class="menu-tabs">
     <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
     <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3498db; border-color:#3498db;">🌐 Онлайн Гра</button>
-    <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Аудіо & Налаштування</button>
-    <button class="tab-btn" onclick="switchTab('tab-rules')">📖 Правила Гри</button>
+    <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
+    <button class="tab-btn" onclick="switchTab('tab-rules')">📖 Правила</button>
   </div>
 
   <div id="tab-newgame" class="tab-content active">
@@ -37,92 +36,37 @@
   </div>
 
   <div id="tab-multiplayer" class="tab-content">
-    <div class="setup-row">
-        <label>Ваше Ім'я:</label>
-        <input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець">
-    </div>
+    <div class="setup-row"><label>Ваше Ім'я:</label><input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець"></div>
     <div class="mp-section">
         <h4>Створити Кімнату</h4>
-        <div class="setup-row">
-            <input type="text" id="mp-room-name" placeholder="Назва (необов'язково)">
-            <input type="text" id="mp-room-pass" placeholder="Пароль (необов'язково)">
-        </div>
+        <div class="setup-row"><input type="text" id="mp-room-name" placeholder="Назва (необов'язково)"><input type="text" id="mp-room-pass" placeholder="Пароль (необов'язково)"></div>
         <button class="btn-green" onclick="createRoom()">Створити та Зайти</button>
     </div>
     <div class="mp-section">
         <h4>Доступні Кімнати</h4>
-        <div class="room-list" id="mp-room-list">
-            <div style="color:#888; text-align:center; padding:10px;">Немає відкритих кімнат. Створіть свою!</div>
-        </div>
+        <div class="room-list" id="mp-room-list"></div>
         <div style="margin-top:15px; border-top:1px dashed #555; padding-top:10px;">
-            <p style="margin:0 0 5px 0; font-size:11px; color:#aaa;">Або введіть код кімнати вручну:</p>
-            <div class="setup-row" style="margin-bottom:0;">
-                <input type="text" id="mp-join-code" placeholder="Код" style="text-transform: uppercase; width:45%;">
-                <input type="text" id="mp-join-pass" placeholder="Пароль (якщо є)" style="width:45%;">
-            </div>
+            <div class="setup-row" style="margin-bottom:0;"><input type="text" id="mp-join-code" placeholder="Код" style="text-transform: uppercase; width:45%;"><input type="text" id="mp-join-pass" placeholder="Пароль" style="width:45%;"></div>
             <button class="btn-blue" style="margin-top:5px;" onclick="joinRoomByCode()">Приєднатися за кодом</button>
         </div>
     </div>
   </div>
 
   <div id="tab-settings" class="tab-content">
-    <div class="setup-row">
-      <label>📻 Радіостанція:</label>
-      <select id="setting-radio" onchange="changeRadio()">
-        <option value="">Вимкнено</option>
-        <option value="custom-url">Власне посилання...</option>
-        <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
-        <option value="https://icecast.vgc.com.ua/lux_str_kiev">Люкс FM</option>
-        <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
-        <option value="https://online.radioroks.ua/RadioROKS" selected>Радіо РОКС</option>
-      </select>
-    </div>
-    <div id="custom-radio-url-container" style="display:none; margin-bottom:15px;">
-        <input type="text" id="custom-radio-url" class="url-input-long" placeholder="Вставте URL аудіопотоку..." style="width:100%;" onchange="applyCustomRadioUrl()">
-    </div>
+    <div class="setup-row"><label>📻 Радіостанція:</label><select id="setting-radio" onchange="changeRadio()"><option value="">Вимкнено</option><option value="custom-url">Власне посилання...</option><option value="https://online.hitfm.ua/HitFM" selected>Хіт FM</option></select></div>
+    <div id="custom-radio-url-container" style="display:none; margin-bottom:15px;"><input type="text" id="custom-radio-url" class="url-input-long" placeholder="URL аудіопотоку..." style="width:100%;" onchange="applyCustomRadioUrl()"></div>
     <div class="setup-row"><label>🎵 Гучність Радіо:</label><input type="range" id="vol-bgm" min="0" max="1" step="0.1" value="0.2" onchange="updateVolume()"></div>
     <hr style="border-color: #444; margin: 15px 0;">
-    
-    <div class="audio-setup-item">
-        <label>🎲 Кубик/Крок:</label>
-        <div style="display:flex; gap:5px; margin-top:5px; align-items:center;">
-            <input type="text" class="url-input-long" id="url-sfx-step" placeholder="Власний URL..." onchange="updateCustomAudio('sfx-step', this.value)">
-        </div>
-    </div>
-    <div class="audio-setup-item">
-        <label>💰 Прибуток:</label>
-        <div style="display:flex; gap:5px; margin-top:5px; align-items:center;">
-            <input type="text" class="url-input-long" id="url-sfx-earn" placeholder="Власний URL..." onchange="updateCustomAudio('sfx-earn', this.value)">
-        </div>
-    </div>
-    <div class="audio-setup-item">
-        <label>💸 Витрата:</label>
-        <div style="display:flex; gap:5px; margin-top:5px; align-items:center;">
-            <input type="text" class="url-input-long" id="url-sfx-spend" placeholder="Власний URL..." onchange="updateCustomAudio('sfx-spend', this.value)">
-        </div>
-    </div>
-
-    <div class="setup-row" style="margin-top:15px;"><label>🔊 Гучність Звуків:</label><input type="range" id="vol-sfx" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()"></div>
+    <div class="setup-row"><label>🔊 Гучність Звуків:</label><input type="range" id="vol-sfx" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()"></div>
     <hr style="border-color: #444; margin: 15px 0;">
-
-    <div class="setup-row">
-      <label>Джекпот Парковки:</label>
-      <select id="setting-jackpot"><option value="1">100%</option><option value="0.5" selected>50% (Баланс)</option><option value="0">Вимк.</option></select>
-    </div>
-    <div class="setup-row">
-      <label>Таймер Ходу:</label>
-      <select id="setting-timer"><option value="0" selected>Вимкнено</option><option value="30">30 секунд</option><option value="60">60 секунд</option></select>
-    </div>
+    <div class="setup-row"><label>Джекпот Парковки:</label><select id="setting-jackpot"><option value="1">100%</option><option value="0.5" selected>50%</option><option value="0">Вимк.</option></select></div>
+    <div class="setup-row"><label>Таймер Ходу:</label><select id="setting-timer"><option value="0" selected>Вимкнено</option><option value="30">30 секунд</option><option value="60">60 секунд</option></select></div>
   </div>
 
   <div id="tab-rules" class="tab-content rules-container">
     <h2 style="text-align:center; color:#f1c40f;">Правила Гри</h2>
-    <p>Гра ставиться на паузу, якщо баланс впаде нижче нуля.</p>
-    <div class="credits">
-        <b style="font-size:14px; color:#fff;">CREATED BY NIKANDLOS</b><br>
-        <span style="color:#777;">Code by Gemini 🤖</span><br>
-        Полтава, Україна.
-    </div>
+    <p>Купуйте нерухомість у Полтаві, будуйте будинки, грайте на біржі та розоріть своїх друзів!</p>
+    <div class="credits"><b style="font-size:14px; color:#fff;">CREATED BY NIKANDLOS</b><br><span style="color:#777;">Code by Gemini 🤖</span></div>
   </div>
 
   <div id="lobby-screen" style="display:none; width: 95%; max-width: 500px; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; border: 1px solid #3498db; text-align:center;">
@@ -130,7 +74,7 @@
       <div style="font-size:18px; margin-bottom:15px;">Код кімнати: <b id="lobby-code" style="color:#f1c40f; letter-spacing:2px;">---</b></div>
       <h4 style="color:#aaa; text-align:left; margin-bottom:5px;">Гравці:</h4>
       <div class="lobby-players" id="lobby-players-list"></div>
-      <p style="font-size:11px; color:#888;">Очікуємо гравців... Тільки творець кімнати (Хост) може запустити гру.</p>
+      <p style="font-size:11px; color:#888;">Очікуємо гравців... Тільки Хост може запустити гру.</p>
       <button class="btn-green" id="lobby-start-btn" onclick="startOnlineGameAction()" style="display:none; font-size:18px; padding:15px; margin-top:15px;">🚀 Запустити Гру</button>
       <button class="btn-red" onclick="leaveLobby()" style="margin-top:10px;">Вийти з кімнати</button>
   </div>
@@ -143,19 +87,10 @@
     <div class="board-center">
       <div class="center-logo">Полтавська<br>Монополія</div>
       <div class="center-panels">
-          <div class="info-box" onclick="openDepositMenu()" title="Клікни, щоб відкрити Депозит">
-            <div class="info-title">Парковка</div>
-            <div class="info-amount jackpot" id="jackpot-display">i₴0</div>
-          </div>
-          <div class="info-box crypto" onclick="openCryptoMenu()" title="Клікни, щоб відкрити Біржу">
-            <div class="info-title">Біржа</div>
-            <div class="info-amount crypto">📈</div>
-          </div>
+          <div class="info-box" onclick="openDepositMenu()" title="Депозит"><div class="info-title">Парковка</div><div class="info-amount jackpot" id="jackpot-display">i₴0</div></div>
+          <div class="info-box crypto" onclick="openCryptoMenu()" title="Біржа"><div class="info-title">Біржа</div><div class="info-amount crypto">📈</div></div>
       </div>
-      <div class="scene">
-        <div class="die-2d" id="die1"></div>
-        <div class="die-2d" id="die2"></div>
-      </div>
+      <div class="scene"><div class="die-2d" id="die1"></div><div class="die-2d" id="die2"></div></div>
       <div class="watermark">Created by NikAndLos<br>Code by Gemini 🤖</div>
     </div>
   </div>
@@ -175,13 +110,7 @@
   </div>
 </div>
 
-<div id="modal-overlay" class="modal-overlay">
-  <div class="modal" id="modal-content">
-    <h2 id="modal-title" style="margin-top: 0;">Заголовок</h2>
-    <div id="modal-body"></div>
-    <div id="modal-buttons" style="margin-top: 15px;"></div>
-  </div>
-</div>
+<div id="modal-overlay" class="modal-overlay"><div class="modal" id="modal-content"><h2 id="modal-title" style="margin-top: 0;"></h2><div id="modal-body"></div><div id="modal-buttons" style="margin-top: 15px;"></div></div></div>
 
 <script src="js/data.js"></script>
 <script src="js/game.js"></script>
