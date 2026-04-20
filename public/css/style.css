@@ -1,57 +1,93 @@
-:root { --bg-color: #0f171e; --board-bg: #e2e8f0; --accent: #f59e0b; }
-body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg-color); color: white; margin: 0; padding: 5px; font-size: 14px; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; }
+:root { --bg-color: #0f172a; --board-bg: #f8fafc; --accent: #f59e0b; --glass: rgba(30, 41, 59, 0.85); }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: radial-gradient(circle at top, #1e293b, #0f172a); color: white; margin: 0; padding: 10px; font-size: 14px; overflow-x: hidden; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
 
-/* Меню */
-#main-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 30, 0.95); z-index: 3000; display: flex; flex-direction: column; align-items: center; padding-top: 20px; overflow-y: auto;}
-.menu-header { font-size: clamp(24px, 5vw, 40px); font-weight: 900; color: #f1c40f; text-shadow: 0 0 10px rgba(241,196,15,0.5); text-align: center; }
-.tab-content { display: none; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 12px; width: 90%; max-width: 500px; margin-bottom: 20px; }
+/* --- МЕНЮ ТА UI --- */
+#main-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); z-index: 3000; display: flex; flex-direction: column; align-items: center; padding-top: 30px; overflow-y: auto; }
+.menu-header { font-size: clamp(28px, 6vw, 45px); font-weight: 900; color: #f1c40f; text-shadow: 0 0 20px rgba(241,196,15,0.6); text-align: center; margin-bottom: 5px; letter-spacing: 1px; }
+.menu-subheader { color: #94a3b8; letter-spacing: 3px; margin-bottom: 25px; font-size: 12px; }
+
+.menu-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; justify-content: center; }
+.tab-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 20px; font-size: 14px; cursor: pointer; border-radius: 8px; transition: 0.3s; font-weight: bold; }
+.tab-btn.active { border-color: var(--accent); background: rgba(245, 158, 11, 0.2); box-shadow: 0 0 15px rgba(245,158,11,0.4); }
+.tab-content { display: none; background: var(--glass); padding: 25px; border-radius: 16px; width: 90%; max-width: 550px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
 .tab-content.active { display: block; }
+
 .setup-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.setup-row input[type="text"], .setup-row input[type="number"], select { padding: 8px; border-radius: 5px; width: 50%; font-weight: bold; }
-input[type="range"] { width: 40%; }
-.start-btn { width: 100%; padding: 15px; background: #10b981; color: white; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; }
-.btn-green { background: #10b981; color: white; border: none; padding: 10px; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold;}
-.btn-red { background: #ef4444; color: white; border: none; padding: 10px; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; margin-top:5px;}
-.btn-blue { background: #3b82f6; color: white; border: none; padding: 10px; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold;}
+.setup-row input[type="text"], .setup-row input[type="number"], select { padding: 10px; border-radius: 8px; width: 50%; font-weight: bold; background: #0f172a; border: 1px solid #475569; color: white; }
+.start-btn { width: 100%; padding: 16px; background: linear-gradient(135deg, #10b981, #059669); color: white; font-weight: bold; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 15px rgba(16,185,129,0.4); transition: transform 0.2s; }
+.start-btn:hover { transform: translateY(-2px); }
 
-/* Адаптація гри */
-.game-container { display: none; flex-direction: column; align-items: center; width: 100%; gap: 10px; }
-@media (min-width: 900px) { .game-container { flex-direction: row; justify-content: center; align-items: flex-start; } }
+/* --- КНОПКИ --- */
+button { padding: 10px; border: none; color: white; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; margin-bottom: 8px; width: 100%; }
+button:disabled { background: #334155 !important; cursor: not-allowed; color: #94a3b8 !important; box-shadow: none !important; transform: none !important; }
+.btn-green { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16,185,129,0.3); } .btn-green:hover:not(:disabled) { transform: scale(1.02); }
+.btn-red { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 10px rgba(239,68,68,0.3); } .btn-red:hover:not(:disabled) { transform: scale(1.02); }
+.btn-blue { background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 4px 10px rgba(59,130,246,0.3); } .btn-blue:hover:not(:disabled) { transform: scale(1.02); }
+.btn-gold { background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; box-shadow: 0 4px 10px rgba(245,158,11,0.3); } .btn-gold:hover:not(:disabled) { transform: scale(1.02); }
+.btn-purple { background: linear-gradient(135deg, #8b5cf6, #7c3aed); } .btn-cyan { background: linear-gradient(135deg, #06b6d4, #0891b2); color: #fff;}
 
-/* ДОШКА: Ідеальний квадрат через vmin */
+/* --- ДАШБОРД ТА ІГРОВИЙ ЕКРАН --- */
+.game-container { display: none; flex-direction: column; align-items: center; width: 100%; gap: 15px; }
+@media (min-width: 1000px) { .game-container { flex-direction: row; justify-content: center; align-items: flex-start; } }
+
+.dashboard { display: flex; gap: 8px; width: 100%; max-width: 1100px; overflow-x: auto; padding: 10px 5px; justify-content: flex-start; scroll-behavior: smooth; }
+@media (min-width: 800px) { .dashboard { justify-content: center; } }
+.player-stat { background: var(--glass); padding: 8px 12px; border-radius: 10px; font-weight: bold; font-size: 13px; min-width: 110px; text-align: center; border: 1px solid rgba(255,255,255,0.1); flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; transition: 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3);}
+.active-player-stat { border-color: #10b981; background: rgba(16, 185, 129, 0.15); box-shadow: 0 0 15px rgba(16,185,129,0.4); transform: translateY(-3px); }
+.debt-player-stat { border-color: #ef4444; box-shadow: 0 0 15px rgba(239,68,68,0.5); animation: pulse-debt 1s infinite alternate; }
+.bankrupt-stat { opacity: 0.3; filter: grayscale(100%); text-decoration: line-through; }
+@keyframes pulse-debt { from { box-shadow: 0 0 5px #ef4444; } to { box-shadow: 0 0 20px #ef4444; } }
+.color-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 5px; border: 1px solid rgba(255,255,255,0.5);}
+
+/* --- ДОШКА (Ідеальний квадрат vmin) --- */
 .board { 
     display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr); 
     width: 95vmin; height: 95vmin; max-width: 750px; max-height: 750px; 
-    background-color: var(--board-bg); border: 2px solid #000; box-shadow: 0 0 20px rgba(0,0,0,0.5); position: relative;
+    background-color: var(--board-bg); border: 3px solid #1e293b; box-shadow: 0 15px 40px rgba(0,0,0,0.7); border-radius: 8px; overflow: hidden;
 }
-.board-center { grid-column: 2 / 11; grid-row: 2 / 11; background: #1e293b; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
-.center-logo { font-size: clamp(16px, 4vmin, 30px); font-weight: 900; color: #f1c40f; text-align: center; line-height: 1.1; }
+.board-center { grid-column: 2 / 11; grid-row: 2 / 11; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; border: 2px solid #334155; position: relative;}
+.center-logo { font-size: clamp(20px, 4.5vmin, 35px); font-weight: 900; color: #f1c40f; text-align: center; line-height: 1.1; text-shadow: 0 4px 10px rgba(0,0,0,0.8); letter-spacing: 1px;}
+.center-panels { display: flex; gap: 15px; }
+.info-box { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); padding: 8px 15px; border-radius: 10px; text-align: center; cursor: pointer; transition: 0.2s; }
+.info-box:hover { background: rgba(255,255,255,0.1); }
+.info-title { font-size: clamp(9px, 1.5vmin, 12px); color: #94a3b8; text-transform: uppercase; }
+.info-amount { font-size: clamp(14px, 2.5vmin, 22px); font-weight: bold; }
 
-.cell { border: 1px solid #94a3b8; display: flex; flex-direction: column; position: relative; color: #000; font-size: clamp(6px, 1.5vmin, 11px); font-weight: bold; text-align: center; overflow: hidden; justify-content: space-between; padding: 1px; }
-.district-bar { width: 100%; height: 20%; border-bottom: 1px solid #000; }
-.cell-emoji { font-size: clamp(10px, 2.5vmin, 18px); margin: 0; line-height: 1; }
-.cell-name { line-height: 1; z-index: 2; word-wrap: break-word; }
-.cell-price { color: #059669; font-weight: 900; z-index: 2; margin-bottom: 2px; }
+.cell { display: flex; flex-direction: column; position: relative; color: #000; font-size: clamp(6px, 1.3vmin, 11px); font-weight: bold; text-align: center; overflow: hidden; justify-content: space-between; padding: 2px; border: 1px solid #cbd5e1; cursor: pointer; background: #fff; transition: filter 0.2s;}
+.cell:hover { filter: brightness(0.9); }
+.corner { justify-content: center; background: #f1f5f9; }
+.district-bar { width: 100%; height: 20%; border-bottom: 1px solid #475569; position: relative; z-index: 3;}
+.cell-emoji { font-size: clamp(12px, 2.5vmin, 20px); margin: 0; line-height: 1; z-index: 2; position: relative;}
+.cell-name { line-height: 1.1; z-index: 2; position: relative; word-wrap: break-word; padding: 0 2px;}
+.cell-price { color: #059669; font-weight: 900; z-index: 2; position: relative; padding-bottom: 2px;}
 
-.tokens-area { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; align-items: center; position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 10; }
-.pawn { width: clamp(8px, 2vmin, 15px); height: clamp(8px, 2vmin, 15px); border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 5px #000; transition: transform 0.2s; }
-.pawn.jumping { transform: translateY(-10px) scale(1.2); z-index: 15; }
+.owner-bar { height: 6px; width: 100%; position: absolute; bottom: 0; left: 0; z-index: 3; transition: 0.3s;}
+.houses-container { display: flex; justify-content: center; gap: 2px; position: absolute; top: 18%; width: 100%; z-index: 4;}
+.house-icon { width: clamp(5px, 1.2vmin, 8px); height: clamp(5px, 1.2vmin, 8px); background: #10b981; border: 1px solid #000; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);}
+.hotel-icon { width: clamp(7px, 1.6vmin, 11px); height: clamp(7px, 1.6vmin, 11px); background: #ef4444; border: 1px solid #000; border-radius: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.5);}
 
-/* Панель управління та лог */
-.controls { width: 95vmin; max-width: 300px; background: #1e293b; padding: 15px; border-radius: 10px; box-sizing: border-box; }
-#log { height: 120px; overflow-y: auto; font-size: 12px; color: #cbd5e1; border-top: 1px solid #475569; padding-top: 10px; margin-top: 10px; }
+.tokens-area { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; align-items: center; position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 10; }
+.pawn { width: clamp(10px, 2.2vmin, 16px); height: clamp(14px, 3vmin, 22px); border-radius: 50% 50% 4px 4px; border: 1.5px solid #fff; box-shadow: 0 4px 8px rgba(0,0,0,0.6); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.pawn.jumping { transform: translateY(-15px) scale(1.3); z-index: 15; box-shadow: 0 10px 15px rgba(0,0,0,0.8); }
 
-/* Дашборд гравців зверху */
-.dashboard { display: flex; gap: 5px; width: 100%; max-width: 1000px; overflow-x: auto; padding: 5px 0; justify-content: center; }
-.player-stat { background: #1e293b; padding: 5px 10px; border-radius: 5px; font-weight: bold; font-size: 12px; min-width: 80px; text-align: center; border: 1px solid transparent; flex-shrink: 0;}
-.active-player-stat { border-color: #10b981; background: rgba(16, 185, 129, 0.2); }
+/* --- ПАНЕЛЬ КЕРУВАННЯ --- */
+.controls { width: 95vmin; max-width: 320px; background: var(--glass); padding: 20px; border-radius: 12px; box-sizing: border-box; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+#log { height: 140px; overflow-y: auto; font-size: 12px; color: #cbd5e1; border-top: 1px solid #334155; padding-top: 10px; margin-top: 15px; scroll-behavior: smooth; }
+#log b { color: #fff; }
 
-/* Модалки */
-.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index: 4000; }
-.modal { background: #1e293b; padding: 20px; border-radius: 10px; width: 90%; max-width: 350px; text-align: center; border: 2px solid #f1c40f; }
+/* --- МОДАЛЬНІ ВІКНА --- */
+.modal-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter: blur(5px); display:none; justify-content:center; align-items:center; z-index: 4000; }
+.modal { background: #1e293b; padding: 25px; border-radius: 16px; width: 90%; max-width: 400px; text-align: center; border: 2px solid #475569; box-shadow: 0 15px 50px rgba(0,0,0,0.8); max-height: 90vh; overflow-y: auto;}
 
-.die-2d { width: clamp(25px, 5vmin, 40px); height: clamp(25px, 5vmin, 40px); background: #fff; border-radius: 5px; display: grid; grid-template-columns: repeat(3, 1fr); padding: 3px; gap: 2px; }
-.dot { background: #000; border-radius: 50%; width: 100%; height: 100%; }
+.die-2d { width: clamp(30px, 6vmin, 50px); height: clamp(30px, 6vmin, 50px); background: #fff; border-radius: 8px; display: grid; grid-template-columns: repeat(3, 1fr); padding: 4px; gap: 3px; box-shadow: inset 0 0 10px rgba(0,0,0,0.2), 0 5px 15px rgba(0,0,0,0.5); }
+.dot { background: #111; border-radius: 50%; width: 100%; height: 100%; box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);}
 .hidden { opacity: 0; }
-.rolling-anim { animation: shake 0.2s infinite; }
-@keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 50% { transform: translate(-1px, -2px) rotate(10deg); } 100% { transform: translate(-2px, 1px) rotate(-10deg); } }
+.rolling-anim { animation: shake 0.3s infinite; }
+@keyframes shake { 0% { transform: translate(2px, 1px) rotate(0deg); } 50% { transform: translate(-2px, -1px) rotate(8deg); } 100% { transform: translate(1px, -2px) rotate(-8deg); } }
+
+/* Картки нерухомості у вікнах */
+.prop-card { border: 2px solid #334155; border-radius: 10px; overflow: hidden; margin-bottom: 15px; text-align: left; background: #fff; color: #000; box-shadow: 0 5px 15px rgba(0,0,0,0.3);}
+.prop-card-header { padding: 12px; text-align: center; border-bottom: 2px solid #334155; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 0 rgba(0,0,0,0.3); text-transform: uppercase;}
+.prop-card-body { padding: 12px; font-size: 13px; line-height: 1.6; }
+.prop-card-row { display: flex; justify-content: space-between; border-bottom: 1px dashed #cbd5e1; padding-bottom: 2px; margin-bottom: 4px;}
+.prop-card-footer { border-top: 1px solid #cbd5e1; padding: 12px; font-size: 12px; text-align: center; color: #475569; background: #f8fafc;}
