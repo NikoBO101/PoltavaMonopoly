@@ -121,7 +121,7 @@ if (socket) {
         render2DDie('die2', data.v2); 
         
         lastDiceSum = data.v1 + data.v2; 
-        lastRollWasDouble = (data.v1 === data.v2);
+       lastRollWasDouble = (v1 === v2);
         
         await sleep(300); 
         await movePlayer(lastDiceSum);
