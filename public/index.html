@@ -1,124 +1,187 @@
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Економіка Полтави</title>
-<link rel="stylesheet" href="css/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Економіка Полтави</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
 
-<audio id="bgm" loop></audio>
-<audio id="sfx-dice" src="https://actions.google.com/sounds/v1/office/abacus_handle_shake.ogg"></audio>
-<audio id="sfx-step" src="https://actions.google.com/sounds/v1/foley/wood_block_drop.ogg"></audio>
-<audio id="sfx-earn" src="https://actions.google.com/sounds/v1/foley/cash_register.ogg"></audio>
-<audio id="sfx-spend" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle_down.ogg"></audio>
-<audio id="sfx-bankrupt" src="https://actions.google.com/sounds/v1/alarms/buzzer_alarm.ogg"></audio>
+    <audio id="bgm" loop></audio>
+    <audio id="sfx-dice" src="https://actions.google.com/sounds/v1/office/abacus_handle_shake.ogg"></audio>
+    <audio id="sfx-step" src="https://actions.google.com/sounds/v1/foley/wood_block_drop.ogg"></audio>
+    <audio id="sfx-earn" src="https://actions.google.com/sounds/v1/foley/cash_register.ogg"></audio>
+    <audio id="sfx-spend" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle_down.ogg"></audio>
+    <audio id="sfx-bankrupt" src="https://actions.google.com/sounds/v1/alarms/buzzer_alarm.ogg"></audio>
 
-<div id="online-badge" class="online-badge">🟢 Онлайн: 0</div>
+    <div id="online-badge" class="online-badge">🟢 Онлайн: 0</div>
 
-<div id="main-menu">
-  <div class="menu-header">ЕКОНОМІКА ПОЛТАВИ</div>
-  <div class="menu-subheader">MULTIPLAYER EDITION</div>
-  
-  <div class="menu-tabs">
-    <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
-    <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн Гра</button>
-    <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
-    <button class="tab-btn" onclick="switchTab('tab-dev')">👑 Про розробника</button>
-  </div>
+    <div id="main-menu">
+        <div class="menu-header">ЕКОНОМІКА ПОЛТАВИ</div>
+        <div class="menu-subheader">MULTIPLAYER EDITION</div>
+        
+        <div class="menu-tabs">
+            <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
+            <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн Гра</button>
+            <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
+            <button class="tab-btn" onclick="switchTab('tab-dev')">👑 Про розробника</button>
+        </div>
 
-  <div id="tab-newgame" class="tab-content active">
-    <div class="setup-row"><label>Гравців:</label><select id="player-count" onchange="generatePlayerInputs()"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option></select></div>
-    <div class="setup-row"><label>Старт (i₴):</label><input type="number" id="start-money" value="15000" step="1000"></div>
-    <div class="player-inputs" id="player-names-container"></div>
-    <button class="start-btn" onclick="startLocalGame()">🎮 ПОЧАТИ ГРУ</button>
-  </div>
+        <div id="tab-newgame" class="tab-content active">
+            <div class="setup-row">
+                <label>Гравців:</label>
+                <select id="player-count" onchange="generatePlayerInputs()">
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </div>
+            <div class="setup-row">
+                <label>Старт (i₴):</label>
+                <input type="number" id="start-money" value="15000" step="1000">
+            </div>
+            
+            <div class="player-inputs" id="player-names-container">
+                </div>
+            
+            <button class="start-btn" onclick="startLocalGame()">🎮 ПОЧАТИ ГРУ</button>
+        </div>
 
-  <div id="tab-multiplayer" class="tab-content">
-    <div class="setup-row"><label>Ваше Ім'я:</label><input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець"></div>
-    <div class="mp-section">
-        <h4>Створити Кімнату</h4>
-        <div class="setup-row"><input type="text" id="mp-room-name" placeholder="Назва кімнати"><input type="text" id="mp-room-pass" placeholder="Пароль (необ.)"></div>
-        <button class="btn-green" onclick="createRoom()">Створити та Зайти</button>
+        <div id="tab-multiplayer" class="tab-content">
+            <div class="setup-row">
+                <label>Ваше Ім'я:</label>
+                <input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець">
+            </div>
+            
+            <div class="mp-section">
+                <h4>Створити Кімнату</h4>
+                <div class="setup-row">
+                    <input type="text" id="mp-room-name" placeholder="Назва кімнати">
+                    <input type="text" id="mp-room-pass" placeholder="Пароль (необ.)">
+                </div>
+                <button class="btn-green" onclick="createRoom()">Створити та Зайти</button>
+            </div>
+            
+            <div class="mp-section">
+                <h4>Доступні Кімнати</h4>
+                <div class="room-list" id="mp-room-list"></div>
+                <div class="setup-row" style="margin-top:10px;">
+                    <input type="text" id="mp-join-code" placeholder="Код кімнати">
+                    <input type="text" id="mp-join-pass" placeholder="Пароль">
+                </div>
+                <button class="btn-blue" onclick="joinRoomByCode()">Приєднатися</button>
+            </div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="setup-row">
+                <label>📻 Радіо:</label>
+                <select id="setting-radio" onchange="changeRadio()">
+                    <option value="" selected>Вимкнено</option>
+                    <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
+                    <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
+                </select>
+            </div>
+            <div class="setup-row">
+                <label>🎵 Музика:</label>
+                <input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()">
+                <span id="vol-bgm-val">20%</span>
+            </div>
+            <div class="setup-row">
+                <label>🔊 Звуки:</label>
+                <input type="range" id="vol-sfx" min="0" max="100" value="50" onchange="updateVolume()">
+                <span id="vol-sfx-val">50%</span>
+            </div>
+            <hr style="border-color:#334155; margin:15px 0;">
+            <div class="setup-row">
+                <label>Джекпот Парковки:</label>
+                <select id="setting-jackpot">
+                    <option value="1">100% (Всі штрафи)</option>
+                    <option value="0.5" selected>50% (Половина)</option>
+                    <option value="0">Вимкнено</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="tab-dev" class="tab-content dev-container">
+            <h2 style="color:#10b981; margin-top:0;">Про Розробника</h2>
+            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Dev" style="width:80px; margin-bottom:15px; filter: drop-shadow(0 0 10px #10b981);">
+            <p style="font-size:16px;">Гру <b>"Економіка Полтави"</b> створено спеціально для веселих вечорів з друзями.</p>
+            <p><b>Автор:</b> Микола (Kolya)</p>
+            <p><b>Місто:</b> Полтава 🇺🇦</p>
+            <p><b>YouTube канали:</b></p>
+            <div style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
+                <a href="https://www.youtube.com/@NikAndLos" target="_blank" class="btn-red" style="text-decoration:none; display:inline-block; width:auto; padding:8px 15px;">▶ NikAndLos</a>
+                <a href="https://www.youtube.com/@NikolosBond" target="_blank" class="btn-red" style="text-decoration:none; display:inline-block; width:auto; padding:8px 15px;">▶ NikolosBond</a>
+            </div>
+            <p style="font-size:11px; color:#94a3b8; margin-top:20px;">Засновано на класичних правилах економічних симуляторів. Код згенеровано за допомогою AI.</p>
+        </div>
+
+        <div id="lobby-screen" style="display:none; text-align:center; background: rgba(15,23,42,0.9); padding: 20px; border-radius: 15px; border: 2px solid #3b82f6;">
+            <h2 style="color:#3b82f6;">КІМНАТА ОЧІКУВАННЯ</h2>
+            <div style="font-size:18px;">Код кімнати: <b id="lobby-code" style="color:#f59e0b; letter-spacing:2px;">---</b></div>
+            <div class="lobby-players" id="lobby-players-list" style="margin-top:20px;"></div>
+            <button class="btn-green" id="lobby-start-btn" onclick="startOnlineGameAction()" style="display:none; margin-top:15px; font-size:16px;">🚀 Запустити Гру</button>
+            <button class="btn-red" onclick="window.location.reload()" style="margin-top:10px;">Вийти</button>
+        </div>
     </div>
-    <div class="mp-section">
-        <h4>Доступні Кімнати</h4>
-        <div class="room-list" id="mp-room-list"></div>
-        <div class="setup-row" style="margin-top:10px;"><input type="text" id="mp-join-code" placeholder="Код кімнати"><input type="text" id="mp-join-pass" placeholder="Пароль"></div>
-        <button class="btn-blue" onclick="joinRoomByCode()">Приєднатися</button>
+
+    <div class="dashboard" id="dashboard"></div>
+
+    <div class="game-container" id="game-container">
+        
+        <div class="board" id="board">
+            <div class="board-center">
+                <div class="center-logo">ЕКОНОМІКА<br>ПОЛТАВИ</div>
+                
+                <div class="center-panels">
+                    <div class="info-box" onclick="openDepositMenu()">
+                        <div class="info-title">Парковка</div>
+                        <div class="info-amount jackpot" id="jackpot-display">i₴0</div>
+                    </div>
+                    <div class="info-box crypto" onclick="openCryptoMenu()">
+                        <div class="info-title">Біржа</div>
+                        <div class="info-amount crypto">📈</div>
+                    </div>
+                </div>
+                
+                <div class="scene">
+                    <div class="die-2d" id="die1"></div>
+                    <div class="die-2d" id="die2"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <h3 id="current-turn" style="margin-top: 0; font-size: 15px; border-bottom: 1px solid #334155; padding-bottom: 8px;"></h3>
+            
+            <button onclick="userClickedRoll()" class="btn-green" id="roll-btn">🎲 Кинути кубики</button>
+            <button onclick="openTradeMenu()" class="btn-blue" id="trade-btn">🤝 Трейд</button>
+            <button onclick="showInventory()" class="btn-cyan" id="inv-btn">🎒 Інвентар</button>
+            <button onclick="openCryptoMenu()" class="btn-cyan" id="crypto-btn">📈 Біржа</button>
+            <button onclick="openDepositMenu()" class="btn-gold" id="deposit-btn">🏦 Депозит</button>
+            <button onclick="openLoanMenu()" class="btn-purple" id="loan-btn">💳 Кредит</button>
+            <button onclick="openSettingsModal()" class="btn-settings" style="background:#475569;" id="settings-btn">⚙️ Налаштування</button>
+            <button onclick="giveUpConfirm()" class="btn-red" id="giveup-btn">🏳️ Здатися</button>
+            
+            <div id="log"></div>
+        </div>
     </div>
-  </div>
 
-  <div id="tab-settings" class="tab-content">
-    <div class="setup-row"><label>📻 Радіо:</label>
-      <select id="setting-radio" onchange="changeRadio()">
-        <option value="" selected>Вимкнено</option>
-        <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
-        <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
-      </select>
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal" id="modal-content">
+            <h2 id="modal-title" style="margin-top: 0;"></h2>
+            <div id="modal-body"></div>
+            <div id="modal-buttons" style="margin-top: 15px;"></div>
+        </div>
     </div>
-    <div class="setup-row"><label>🎵 Музика:</label><input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()"><span id="vol-bgm-val">20%</span></div>
-    <div class="setup-row"><label>🔊 Звуки:</label><input type="range" id="vol-sfx" min="0" max="100" value="50" onchange="updateVolume()"><span id="vol-sfx-val">50%</span></div>
-    <hr style="border-color:#334155; margin:15px 0;">
-    <div class="setup-row"><label>Джекпот Парковки:</label><select id="setting-jackpot"><option value="1">100% (Всі штрафи)</option><option value="0.5" selected>50% (Половина)</option><option value="0">Вимкнено</option></select></div>
-  </div>
 
-  <div id="tab-dev" class="tab-content dev-container">
-    <h2 style="color:#10b981; margin-top:0;">Про Розробника</h2>
-    <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Dev" style="width:80px; margin-bottom:15px; filter: drop-shadow(0 0 10px #10b981);">
-    <p style="font-size:16px;">Гру <b>"Економіка Полтави"</b> створено спеціально для веселих вечорів з друзями.</p>
-    <p><b>Автор:</b> Микола (Kolya)</p>
-    <p><b>Місто:</b> Полтава 🇺🇦</p>
-    <p><b>YouTube канали:</b></p>
-    <div style="display:flex; justify-content:center; gap:10px; margin-top:10px;">
-        <a href="#" class="btn-red" style="text-decoration:none; display:inline-block; width:auto; padding:8px 15px;">▶ NikAndLos</a>
-        <a href="#" class="btn-red" style="text-decoration:none; display:inline-block; width:auto; padding:8px 15px;">▶ NikolosBond</a>
-    </div>
-    <p style="font-size:11px; color:#94a3b8; margin-top:20px;">Засновано на класичних правилах економічних симуляторів. Код згенеровано за допомогою AI.</p>
-  </div>
-
-  <div id="lobby-screen" style="display:none; text-align:center; background: rgba(15,23,42,0.9); padding: 20px; border-radius: 15px; border: 2px solid #3b82f6;">
-      <h2 style="color:#3b82f6;">КІМНАТА ОЧІКУВАННЯ</h2>
-      <div style="font-size:18px;">Код кімнати: <b id="lobby-code" style="color:#f59e0b; letter-spacing:2px;">---</b></div>
-      <div class="lobby-players" id="lobby-players-list" style="margin-top:20px;"></div>
-      <button class="btn-green" id="lobby-start-btn" onclick="startOnlineGameAction()" style="display:none; margin-top:15px; font-size:16px;">🚀 Запустити Гру</button>
-      <button class="btn-red" onclick="window.location.reload()" style="margin-top:10px;">Вийти</button>
-  </div>
-</div>
-
-<div class="dashboard" id="dashboard"></div>
-
-<div class="game-container" id="game-container">
-  <div class="board" id="board">
-    <div class="board-center">
-      <div class="center-logo">ЕКОНОМІКА<br>ПОЛТАВИ</div>
-      <div class="center-panels">
-          <div class="info-box" onclick="openDepositMenu()"><div class="info-title">Парковка</div><div class="info-amount jackpot" id="jackpot-display">i₴0</div></div>
-          <div class="info-box crypto" onclick="openCryptoMenu()"><div class="info-title">Біржа</div><div class="info-amount crypto">📈</div></div>
-      </div>
-      <div class="scene"><div class="die-2d" id="die1"></div><div class="die-2d" id="die2"></div></div>
-    </div>
-  </div>
-  <div class="controls">
-    <h3 id="current-turn" style="margin-top: 0; font-size: 15px; border-bottom: 1px solid #334155; padding-bottom: 8px;"></h3>
-    <button onclick="userClickedRoll()" class="btn-green" id="roll-btn">🎲 Кинути кубики</button>
-    <button onclick="openTradeMenu()" class="btn-blue" id="trade-btn">🤝 Трейд</button>
-    <button onclick="showInventory()" class="btn-cyan" id="inv-btn">🎒 Інвентар</button>
-    <button onclick="openCryptoMenu()" class="btn-cyan" id="crypto-btn">📈 Біржа</button>
-    <button onclick="openDepositMenu()" class="btn-gold" id="deposit-btn">🏦 Депозит</button>
-    <button onclick="openLoanMenu()" class="btn-purple" id="loan-btn">💳 Кредит</button>
-    <button onclick="openSettingsModal()" class="btn-settings" style="background:#475569;" id="settings-btn">⚙️ Налаштування</button>
-    <button onclick="giveUpConfirm()" class="btn-red" id="giveup-btn">🏳️ Здатися</button>
-    <div id="log"></div>
-  </div>
-</div>
-
-<div id="modal-overlay" class="modal-overlay"><div class="modal" id="modal-content"><h2 id="modal-title" style="margin-top: 0;"></h2><div id="modal-body"></div><div id="modal-buttons" style="margin-top: 15px;"></div></div></div>
-
-<script src="js/data.js"></script>
-<script src="js/game.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/game.js"></script>
 </body>
 </html>
