@@ -2,8 +2,8 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Полтавська Монополія (Online)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Економіка Полтави</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -20,8 +20,8 @@
 <div id="online-badge" class="online-badge">🟢 Онлайн: 0</div>
 
 <div id="main-menu">
-  <div class="menu-header">ПОЛТАВСЬКА МОНОПОЛІЯ</div>
-  <div class="menu-subheader">NIKANDLOS MULTIPLAYER EDITION</div>
+  <div class="menu-header">ЕКОНОМІКА ПОЛТАВИ</div>
+  <div class="menu-subheader">ONLINE EDITION</div>
   
   <div class="menu-tabs">
     <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
@@ -55,30 +55,28 @@
   </div>
 
   <div id="tab-settings" class="tab-content">
-    <div class="setup-row"><label>📻 Радіостанція:</label><select id="setting-radio" onchange="changeRadio()"><option value="">Вимкнено</option><option value="custom-url">Власне посилання...</option><option value="https://online.hitfm.ua/HitFM" selected>Хіт FM</option></select></div>
-    <div id="custom-radio-url-container" style="display:none; margin-bottom:15px;"><input type="text" id="custom-radio-url" class="url-input-long" placeholder="URL аудіопотоку..." style="width:100%;" onchange="applyCustomRadioUrl()"></div>
+    <div class="setup-row"><label>📻 Радіостанція:</label><select id="setting-radio" onchange="changeRadio()"><option value="">Вимкнено</option><option value="https://online.hitfm.ua/HitFM" selected>Хіт FM</option></select></div>
     <div class="setup-row"><label>🎵 Гучність Радіо:</label><input type="range" id="vol-bgm" min="0" max="1" step="0.1" value="0.2" onchange="updateVolume()"></div>
     <hr style="border-color: #444; margin: 15px 0;">
     <div class="setup-row"><label>🔊 Гучність Звуків:</label><input type="range" id="vol-sfx" min="0" max="1" step="0.1" value="0.5" onchange="updateVolume()"></div>
-    <hr style="border-color: #444; margin: 15px 0;">
     <div class="setup-row"><label>Джекпот Парковки:</label><select id="setting-jackpot"><option value="1">100%</option><option value="0.5" selected>50%</option><option value="0">Вимк.</option></select></div>
-    <div class="setup-row"><label>Таймер Ходу:</label><select id="setting-timer"><option value="0" selected>Вимкнено</option><option value="30">30 секунд</option><option value="60">60 секунд</option></select></div>
   </div>
 
   <div id="tab-rules" class="tab-content rules-container">
     <h2 style="text-align:center; color:#f1c40f;">Правила Гри</h2>
-    <p>Купуйте нерухомість у Полтаві, будуйте будинки, грайте на біржі та розоріть своїх друзів!</p>
-    <div class="credits"><b style="font-size:14px; color:#fff;">CREATED BY NIKANDLOS</b><br><span style="color:#777;">Code by Gemini 🤖</span></div>
+    <p><b>Мета:</b> Залишитися єдиним гравцем, який не збанкрутував, скуповуючи нерухомість та збираючи оренду з конкурентів.</p>
+    <p><b>Хід гри:</b> Гравці по черзі кидають кубики. Дубль дає додатковий хід (3 дублі підряд = в'язниця).</p>
+    <p><b>Нерухомість:</b> Ставши на вільну ділянку, ви можете її купити. Якщо відмовитесь, вона йде на аукціон. Зібравши всі ділянки одного кольору, оренда на них зростає х2, і ви можете будувати будинки.</p>
+    <p><b>Борги:</b> Якщо баланс іде в мінус, ви повинні закласти майно, продати акції або взяти кредит. Якщо грошей все одно не вистачає — ви банкрут.</p>
+    <div class="credits"><b style="font-size:14px; color:#fff;">ЕКОНОМІКА ПОЛТАВИ</b><br><span style="color:#777;">Developed for web</span></div>
   </div>
 
   <div id="lobby-screen" style="display:none; width: 95%; max-width: 500px; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; border: 1px solid #3498db; text-align:center;">
       <h2 style="color:#3498db; margin-top:0;">КІМНАТА ОЧІКУВАННЯ</h2>
       <div style="font-size:18px; margin-bottom:15px;">Код кімнати: <b id="lobby-code" style="color:#f1c40f; letter-spacing:2px;">---</b></div>
-      <h4 style="color:#aaa; text-align:left; margin-bottom:5px;">Гравці:</h4>
       <div class="lobby-players" id="lobby-players-list"></div>
-      <p style="font-size:11px; color:#888;">Очікуємо гравців... Тільки Хост може запустити гру.</p>
       <button class="btn-green" id="lobby-start-btn" onclick="startOnlineGameAction()" style="display:none; font-size:18px; padding:15px; margin-top:15px;">🚀 Запустити Гру</button>
-      <button class="btn-red" onclick="leaveLobby()" style="margin-top:10px;">Вийти з кімнати</button>
+      <button class="btn-red" onclick="window.location.reload()" style="margin-top:10px;">Вийти з кімнати</button>
   </div>
 </div>
 
@@ -87,18 +85,16 @@
 <div class="game-container" id="game-container">
   <div class="board" id="board">
     <div class="board-center">
-      <div class="center-logo">Полтавська<br>Монополія</div>
+      <div class="center-logo">ЕКОНОМІКА<br>ПОЛТАВИ</div>
       <div class="center-panels">
-          <div class="info-box" onclick="openDepositMenu()" title="Депозит"><div class="info-title">Парковка</div><div class="info-amount jackpot" id="jackpot-display">i₴0</div></div>
-          <div class="info-box crypto" onclick="openCryptoMenu()" title="Біржа"><div class="info-title">Біржа</div><div class="info-amount crypto">📈</div></div>
+          <div class="info-box" onclick="openDepositMenu()"><div class="info-title">Парковка</div><div class="info-amount jackpot" id="jackpot-display">i₴0</div></div>
+          <div class="info-box crypto" onclick="openCryptoMenu()"><div class="info-title">Біржа</div><div class="info-amount crypto">📈</div></div>
       </div>
       <div class="scene"><div class="die-2d" id="die1"></div><div class="die-2d" id="die2"></div></div>
-      <div class="watermark">Created by NikAndLos<br>Code by Gemini 🤖</div>
     </div>
   </div>
 
   <div class="controls">
-    <div id="timer-display" class="timer-display">⏳ 30</div>
     <h3 id="current-turn" style="margin-top: 0; font-size: 15px; border-bottom: 1px solid #444; padding-bottom: 5px;"></h3>
     <button onclick="userClickedRoll()" class="btn-green" id="roll-btn">🎲 Кинути кубики</button>
     <button onclick="openCryptoMenu()" class="btn-cyan" id="crypto-btn">📈 Фондова Біржа</button>
@@ -106,7 +102,6 @@
     <button onclick="openTradeMenu()" class="btn-blue" id="trade-btn">🤝 Трейд</button>
     <button onclick="openDepositMenu()" class="btn-gold" id="deposit-btn">🏦 Депозит</button>
     <button onclick="openLoanMenu()" class="btn-purple" id="loan-btn">💳 Кредит</button>
-    <button onclick="openSettingsModal()" class="btn-settings" id="settings-btn">⚙️ Налаштування</button>
     <button onclick="giveUpConfirm()" class="btn-red" id="giveup-btn">🏳️ Здатися</button>
     <div id="log"></div>
   </div>
