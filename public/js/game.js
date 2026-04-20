@@ -871,7 +871,7 @@ function userClickedRoll() {
         startTurnLocal(); 
     } 
 }
-
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function startTurnLocal() {
     if (isRolling || processDebts()) return; 
     isRolling = true; 
