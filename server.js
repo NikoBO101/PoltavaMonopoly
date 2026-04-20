@@ -94,6 +94,8 @@ io.on('connection', (socket) => {
 
 function getPublicRooms() { return Object.values(rooms).map(r => ({ id: r.id, name: r.name, hasPassword: r.password.length > 0, playersCount: r.players.length, status: r.status })); }
 
-app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.use((req, res) => { 
+    res.sendFile(path.join(__dirname, 'public', 'index.html')); 
+});
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => { console.log(`🚀 Сервер працює на порту ${PORT}!`); });
