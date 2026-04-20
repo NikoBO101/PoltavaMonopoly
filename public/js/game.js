@@ -871,7 +871,9 @@ function userClickedRoll() {
         startTurnLocal(); 
     } 
 }
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
 async function startTurnLocal() {
     if (isRolling || processDebts()) return; 
     isRolling = true; 
@@ -898,28 +900,31 @@ async function startTurnLocal() {
             return nextTurn(); 
         }
         
-        let v1 = Math.floor(Math.random()*6)+1; 
-        let v2 = Math.floor(Math.random()*6)+1; 
+        let v1 = Math.floor(Math.random() * 6) + 1; 
+        let v2 = Math.floor(Math.random() * 6) + 1; 
         const isDouble = (v1 === v2);
         
         playSound('sfx-dice'); 
         const d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
-        d1.classList.add('rolling-anim'); 
-        d2.classList.add('rolling-anim');
-        
-        for (let i = 0; i < 10; i++) { 
-            render2DDie('die1', Math.floor(Math.random()*6)+1); 
-            render2DDie('die2', Math.floor(Math.random()*6)+1); 
-            await sleep(50); 
+        if (d1 && d2) {
+            d1.classList.add('rolling-anim'); 
+            d2.classList.add('rolling-anim');
+            
+            for (let i = 0; i < 10; i++) { 
+                render2DDie('die1', Math.floor(Math.random() * 6) + 1); 
+                render2DDie('die2', Math.floor(Math.random() * 6) + 1); 
+                await sleep(50); 
+            }
+            
+            d1.classList.remove('rolling-anim'); 
+            d2.classList.remove('rolling-anim');
         }
         
-        d1.classList.remove('rolling-anim'); 
-        d2.classList.remove('rolling-anim');
         render2DDie('die1', v1); 
         render2DDie('die2', v2); 
         
         lastDiceSum = v1 + v2; 
-        lastRollWasDouble = (data.v1 === data.v2);
+        lastRollWasDouble = isDouble;
         
         await sleep(300);
 
@@ -958,6 +963,7 @@ async function startTurnLocal() {
                 p.doublesCount = 0; 
             }
         }
+        
         await movePlayer(lastDiceSum);
     } catch (e) { 
         console.error(e); 
