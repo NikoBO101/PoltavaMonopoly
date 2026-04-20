@@ -26,15 +26,8 @@ let myMultiplayerId = null;
 let currentLobby = null; 
 let pendingTrade = null;
 
-const dotL = { 
-    1:[0,0,0,0,1,0,0,0,0], 
-    2:[1,0,0,0,0,0,0,0,1], 
-    3:[1,0,0,0,1,0,0,0,1], 
-    4:[1,0,1,0,0,0,1,0,1], 
-    5:[1,0,1,0,1,0,1,0,1], 
-    6:[1,0,1,1,0,1,1,0,1] 
-};
-const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
+// Заглушка для таймера (щоб гра не шукала стару функцію і не крашилась)
+function stopTimer() {} 
 
 
 // === МЕРЕЖЕВА ЛОГІКА (SOCKET.IO) ===
@@ -194,7 +187,7 @@ function generatePlayerInputs() {
     for (let i = 0; i < c; i++) {
         cont.innerHTML += `
             <div style="display:flex; align-items:center; gap:8px;">
-                <input type="text" id="p${i}-name" value="${defs[i]}" style="flex-grow:1;">
+                <input type="text" id="p${i}-name" value="${defs[i]}" style="flex-grow:1; padding:8px; border-radius:5px;">
                 <label style="font-size:12px; font-weight:bold; color:#10b981; display:flex; align-items:center; gap:3px; background:rgba(0,0,0,0.5); padding:8px; border-radius:5px; cursor:pointer;">
                     <input type="checkbox" id="p${i}-isbot" ${defs[i].includes('Бот') ? 'checked' : ''}> Бот
                 </label>
@@ -239,7 +232,7 @@ function playSound(id) {
 
 function render2DDie(id, num) { 
     let el = document.getElementById(id); 
-    if (el) {
+    if (el && dotL[num]) {
         el.innerHTML = dotL[num].map(v => `<div class="dot ${v === 0 ? 'hidden' : ''}"></div>`).join(''); 
     }
 }
@@ -309,7 +302,7 @@ function startLocalGame() {
     changeRadio(); 
     currentRound = 1; 
     jackpotAmount = 0;
-    jackpotRate = parseFloat(document.getElementById('setting-jackpot').value);
+    jackpotRate = parseFloat(document.getElementById('setting-jackpot').value) || 0.5;
     
     const c = parseInt(document.getElementById('player-count').value); 
     const sm = parseInt(document.getElementById('start-money').value) || 15000;
@@ -522,7 +515,6 @@ function botPreRollActions(p) {
     if (p.money < 1500) return;
     let colorsOwned = {};
     
-    // Рахуємо майно
     for (let i in properties) { 
         if (properties[i].owner === p.id) { 
             let g = mapData[i].group; 
@@ -533,7 +525,6 @@ function botPreRollActions(p) {
     for (let g in colorsOwned) {
         let groupCells = mapData.map((c, i) => ({c, i})).filter(x => x.c.group === g);
         if (colorsOwned[g] === groupCells.length) { 
-            // У бота є монополія, пробуємо будувати
             for (let cellData of groupCells) {
                 let idx = cellData.i; 
                 let prop = properties[idx];
@@ -544,7 +535,7 @@ function botPreRollActions(p) {
                     logMsg(`🤖 <b>${p.name}</b> будує дім на ${cellData.c.name.replace('<br>',' ')}.`);
                     drawHouses(idx, prop.houses); 
                     updateUI(); 
-                    return; // Бот будує тільки один дім за хід
+                    return; 
                 }
             }
         }
@@ -928,6 +919,8 @@ async function startTurnLocal() {
         render2DDie('die2', v2); 
         
         lastDiceSum = v1 + v2; 
+        lastRollWasDouble = (data.v1 === data.v2);
+        
         await sleep(300);
 
         if (p.inJail) {
