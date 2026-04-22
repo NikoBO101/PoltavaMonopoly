@@ -247,10 +247,27 @@ function isMyTurn() {
 
 
 // === ІНІЦІАЛІЗАЦІЯ ТА UI ===
-document.addEventListener("DOMContentLoaded", () => { 
-    generatePlayerInputs(); 
-    updateVolume(); 
-    updateProfileUI(); // <--- ДОДАЙ ЦЕЙ РЯДОК
+document.addEventListener("DOMContentLoaded", () => {
+    generatePlayerInputs();
+    updateVolume();
+    
+    // Авто-логін, якщо дані є в пам'яті браузера
+    let saved = localStorage.getItem('poltavaUser');
+    if (saved && socket) {
+        let data = JSON.parse(saved);
+        // Чекаємо трохи, щоб сокет встиг підключитись
+        setTimeout(() => {
+            socket.emit('login', { nick: data.nick, pin: data.pin }, (res) => {
+                if (res.success) {
+                    currentUser = res.user;
+                    updateProfileUI();
+                }
+            });
+        }, 1000);
+    } else {
+        updateProfileUI();
+    }
+
     if(!socket) renderRoomsList([]);
 });
 
@@ -1847,19 +1864,27 @@ function loginAction() {
     if (!nick || nick.length < 3) return alert("Нікнейм має бути мінімум 3 символи!");
     if (!pin || pin.length !== 4 || isNaN(pin)) return alert("PIN-код має складатися з 4 цифр!");
     
-    // Створюємо "профіль" і зберігаємо в пам'ять браузера
-    currentUser = {
-        nick: nick,
-        pin: pin,
-        wins: 0,
-        activeTitle: "Новачок",
-        coins: 100, // Даємо бонус 100 коїнів за реєстрацію!
-        titles: ["Новачок"]
-    };
-    
-    localStorage.setItem('poltavaUser', JSON.stringify(currentUser));
-    updateProfileUI();
-    alert(`Ласкаво просимо, ${nick}! Твій профіль створено.`);
+    // Перевірка, чи працює сокет (зв'язок із сервером)
+    if (!socket || !socket.connected) {
+        return alert("Помилка: Немає зв'язку з сервером. Зачекайте або оновіть сторінку.");
+    }
+
+    // ВІДПРАВЛЯЄМО ЗАПИТ НА СЕРВЕР (замість локального збереження)
+    socket.emit('login', { nick: nick, pin: pin }, (response) => {
+        if (response && response.success) {
+            // Якщо сервер сказав "ОК", записуємо отриманого юзера в глобальну змінну
+            currentUser = response.user;
+            
+            // Зберігаємо ЛОГІН/ПІН локально ТІЛЬКИ для того, щоб наступного разу не вводити
+            localStorage.setItem('poltavaUser', JSON.stringify({ nick: nick, pin: pin }));
+            
+            updateProfileUI();
+            alert(response.msg);
+        } else {
+            // Якщо сервер повернув помилку (наприклад, невірний пін)
+            alert(response.msg || "Помилка авторизації");
+        }
+    });
 }
 
 function logoutAction() {
@@ -1867,5 +1892,7 @@ function logoutAction() {
         currentUser = null;
         localStorage.removeItem('poltavaUser');
         updateProfileUI();
+        // Можна додати перезавантаження сторінки, щоб все скинулось
+        location.reload();
     }
 }
