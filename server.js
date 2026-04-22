@@ -36,23 +36,28 @@ io.on('connection', (socket) => {
     
     socket.emit('updateRoomsList', getPublicRooms());
 
-    // === АВТОРИЗАЦІЯ ТА РЕЄСТРАЦІЯ ===
+    // === АВТОРИЗАЦІЯ ТА РЕЄСТРАЦІЯ (ПОКРАЩЕНА) ===
     socket.on('login', async (data, callback) => {
         if (!usersCollection) {
-            return callback({ success: false, msg: "База даних ще завантажується, зачекайте..." });
+            return callback({ success: false, msg: "База даних завантажується..." });
         }
 
-        const { nick, pin } = data;
+        let { nick, pin } = data;
+        // Переводимо нік у нижній регістр для пошуку, щоб уникнути клонів Nik / nik
+        const searchNick = nick.toLowerCase();
+
         try {
-            let user = await usersCollection.findOne({ nick: nick });
+            let user = await usersCollection.findOne({ nick: { $regex: new RegExp(`^${nick}$`, "i") } });
 
             if (user) {
+                // ГРАВЕЦЬ ІСНУЄ -> Перевіряємо PIN
                 if (user.pin === pin) {
-                    callback({ success: true, user: user, msg: `З поверненням, ${nick}!` });
+                    return callback({ success: true, user: user, msg: `З поверненням, ${user.nick}!` });
                 } else {
-                    callback({ success: false, msg: "❌ Невірний PIN-код для цього нікнейму!" });
+                    return callback({ success: false, msg: "❌ Цей нік уже зайнятий. Невірний PIN!" });
                 }
             } else {
+                // ГРАВЦЯ НЕМАЄ -> Реєструємо нового
                 const newUser = { 
                     nick: nick, 
                     pin: pin, 
@@ -63,7 +68,7 @@ io.on('connection', (socket) => {
                     createdAt: new Date()
                 };
                 await usersCollection.insertOne(newUser);
-                callback({ success: true, user: newUser, msg: "✅ Акаунт створено! Тобі нараховано 100 коїнів." });
+                return callback({ success: true, user: newUser, msg: "✅ Акаунт створено! Тобі нараховано 100 коїнів." });
             }
         } catch (err) {
             console.error("Помилка БД:", err);
