@@ -26,7 +26,9 @@ let myMultiplayerId = null;
 let currentLobby = null; 
 let pendingTrade = null;
 
+// Заглушка таймера, щоб не було помилок
 function stopTimer() {}
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 
@@ -87,14 +89,8 @@ if (socket) {
         currentRound = serverGameState.currentRound; 
         turn = serverGameState.turn; 
         
-        // Виправляємо баг з відсутністю кольору фішки
-        players = serverGameState.players.map((p, i) => ({
-            ...p, 
-            color: playerColors[i % playerColors.length], 
-            money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, 
-            inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, 
-            skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
-            stockHistory: [], debtMode: false
+        players = serverGameState.players.map(p => ({
+            ...p, money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, stockHistory: [], debtMode: false
         }));
         
         document.getElementById('lobby-screen').style.display = 'none'; 
@@ -109,8 +105,32 @@ if (socket) {
     });
 
     socket.on('diceRolled', async (data) => {
-        // Використовуємо ту саму логіку, що й у локальній грі, щоб не було зависань
-        await processRollAndMove(data.v1, data.v2);
+        if (isRolling || processDebts()) return; 
+        isRolling = true; 
+        updateUI();
+        playSound('sfx-dice'); 
+        
+        const d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
+        if (d1 && d2) {
+            d1.classList.add('rolling-anim'); 
+            d2.classList.add('rolling-anim');
+            for (let i = 0; i < 10; i++) { 
+                render2DDie('die1', Math.floor(Math.random()*6)+1); 
+                render2DDie('die2', Math.floor(Math.random()*6)+1); 
+                await sleep(50); 
+            }
+            d1.classList.remove('rolling-anim'); 
+            d2.classList.remove('rolling-anim');
+        }
+        
+        render2DDie('die1', data.v1); 
+        render2DDie('die2', data.v2); 
+        
+        lastDiceSum = data.v1 + data.v2; 
+        lastRollWasDouble = (data.v1 === data.v2);
+        
+        await sleep(300); 
+        await movePlayer(lastDiceSum);
     });
 
     socket.on('updateGameState', (stateData) => {
@@ -120,6 +140,9 @@ if (socket) {
         jackpotAmount = stateData.jackpotAmount; 
         stocks = stateData.stocks; 
         currentRound = stateData.currentRound || currentRound;
+        
+        // БРОНЕБІЙНИЙ ФІКС: Знімаємо блокування кнопок при отриманні стану
+        isRolling = false;
         
         players.forEach(p => { 
             const token = document.getElementById(`token-${p.id}`); 
@@ -133,6 +156,7 @@ if (socket) {
     });
 }
 
+// Жорстка синхронізація для всього
 function broadcastState() { 
     if (isOnlineMode && isMyTurn() && currentLobby) { 
         socket.emit('syncGameState', currentLobby.id, { 
@@ -872,7 +896,6 @@ async function startTurnLocal() {
     await processRollAndMove(v1, v2);
 }
 
-// Виправлено: єдина логіка для онлайну та локалки, щоб не було зависань
 async function processRollAndMove(v1, v2) {
     if (isRolling || processDebts()) return; 
     isRolling = true; 
@@ -1014,12 +1037,12 @@ async function movePlayer(steps) {
         }
     }
     
-    // Виправлено: тільки активний гравець викликає картки і купівлю
+    // БРОНЕБІЙНИЙ ФІКС для онлайну
     if (isMyTurn()) {
         handleLanding(p.pos, p);
     } else {
-        // Інші гравці розблоковують інтерфейс і чекають рішення
-        isRolling = false; 
+        isRolling = false;
+        updateUI();
     }
 }
 
