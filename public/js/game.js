@@ -1567,8 +1567,16 @@ function applyCard() {
     let p = players[turn]; 
     let c = window.currentCard; 
     closeModal();
+
+    // ПОВІДОМЛЯЄМО ВСІХ ПРО ПОДІЮ
+    let cardMsg = `🃏 <b><span style="color:${p.color}">${p.name}</span></b>: ${c.text}`;
+    if (isOnlineMode) {
+        socket.emit('playerAction', currentLobby.id, { type: 'chat', val: cardMsg });
+    } else {
+        logMsgLocal(cardMsg);
+    }
     
-    if (c.action === 'pay') { 
+    if (c.action === 'pay') {
         deductMoney(p, c.val); 
     } else if (c.action === 'receive') { 
         p.money += c.val; 
