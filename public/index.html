@@ -27,12 +27,13 @@
         
         <button id="return-game-btn" class="btn-green" style="display:none; width: 90%; max-width: 550px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 0 20px #10b981;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
 
-        <div class="menu-tabs">
+       <div class="menu-tabs">
             <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
             <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн</button>
             <button class="tab-btn" onclick="switchTab('tab-rules')" style="color:#10b981;">📜 Правила</button>
             <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
             <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b;">👑 Розробник</button>
+            <button class="tab-btn" onclick="switchTab('tab-profile')" style="color:#a855f7;">👤 Профіль</button>
         </div>
         <div id="tab-newgame" class="tab-content active">
             <div class="setup-row">
@@ -145,7 +146,44 @@
                 <p style="font-size:11px; color:#64748b; margin-top:25px;">2026 рік.</p>
             </div>
         </div>
+<div id="tab-profile" class="tab-content">
+            <h2 style="color:#a855f7; text-align:center; margin-top:0;">👤 МІЙ ПРОФІЛЬ</h2>
+            
+            <div id="auth-form">
+                <p style="font-size:13px; color:#94a3b8; text-align:center;">Введіть нік та PIN, щоб зберігати досягнення та перемоги.</p>
+                <div class="setup-row">
+                    <label>Нікнейм:</label>
+                    <input type="text" id="auth-nick" placeholder="Наприклад: Kolya">
+                </div>
+                <div class="setup-row">
+                    <label>PIN (4 цифри):</label>
+                    <input type="password" id="auth-pin" maxlength="4" placeholder="1234">
+                </div>
+                <button class="btn-purple" onclick="loginAction()" style="margin-top:10px; padding:15px; font-size:16px;">УВІЙТИ В ГРУ</button>
+            </div>
+            
+            <div id="profile-info" style="display:none; text-align:left; background:rgba(0,0,0,0.4); padding:15px; border-radius:12px; border:1px solid #a855f7;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 id="user-display-name" style="margin-top:0; margin-bottom:5px; color:#fff; font-size:22px;">Нікнейм</h3>
+                    <span style="background:rgba(16,185,129,0.2); color:#10b981; padding:5px 10px; border-radius:20px; font-size:12px; border:1px solid #10b981;">Online</span>
+                </div>
+                
+                <p style="margin:5px 0;">🏆 Перемог: <b id="user-wins" style="color:#10b981;">0</b></p>
+                <p style="margin:5px 0;">🎖️ Титул: <b id="user-active-title" style="color:#f59e0b;">Новачок</b></p>
+                <p style="margin:5px 0;">💰 Полтава-коїни: <b id="user-coins" style="color:#3b82f6;">0</b></p>
+                
+                <hr style="border-color:rgba(255,255,255,0.1); margin:15px 0;">
+                
+                <h4 style="margin-top:0; margin-bottom:10px; color:#94a3b8;">Мої досягнення:</h4>
+                <div id="user-titles-list" style="font-size:12px; color:#cbd5e1; display:flex; flex-wrap:wrap; gap:5px;">
+                    <span style="background:rgba(255,255,255,0.1); padding:5px 8px; border-radius:5px;">Новачок</span>
+                </div>
+                
+                <button class="btn-red" onclick="logoutAction()" style="margin-top:20px; padding:10px;">Вийти з акаунту</button>
+            </div>
+        </div>
 
+        <div id="lobby-screen" style="display:none; text-align:center; padding: 20px;">
         <div id="lobby-screen" style="display:none; text-align:center; background: rgba(15,23,42,0.9); padding: 20px; border-radius: 15px; border: 2px solid #3b82f6;">
             <h2 style="color:#3b82f6;">КІМНАТА ОЧІКУВАННЯ</h2>
             <div style="font-size:18px;">Код кімнати: <b id="lobby-code" style="color:#f59e0b; letter-spacing:2px;">---</b></div>
