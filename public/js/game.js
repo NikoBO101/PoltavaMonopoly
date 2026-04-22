@@ -255,6 +255,25 @@ function switchTab(tabId) {
     event.currentTarget.classList.add('active'); 
 }
 
+function returnToGame() {
+    document.getElementById('main-menu').style.display = 'none';
+    document.getElementById('game-container').style.display = 'flex';
+}
+
+function toggleMenuMusic() {
+    let bgm = document.getElementById('bgm');
+    let btn = document.getElementById('menu-music-toggle');
+    if (!window.musicEnabled) {
+        bgm.play().catch(() => alert("Клікніть по екрану, щоб дозволити звук!"));
+        window.musicEnabled = true;
+        if(btn) { btn.innerText = "🎵 Музика: ГРАЄ"; btn.className = "btn-green"; }
+    } else {
+        bgm.pause();
+        window.musicEnabled = false;
+        if(btn) { btn.innerText = "🎵 Музика: ВИМКНЕНО"; btn.className = "btn-purple"; }
+    }
+}
+
 function generatePlayerInputs() {
     let selectEl = document.getElementById('player-count'); 
     if (!selectEl) return;
@@ -442,8 +461,9 @@ function startLocalGame() {
         });
     }
     
-    document.getElementById('main-menu').style.display = 'none'; 
+document.getElementById('main-menu').style.display = 'none'; 
     document.getElementById('game-container').style.display = 'flex';
+    document.getElementById('return-game-btn').style.display = 'block';
     
     render2DDie('die1', 1); 
     render2DDie('die2', 1); 
@@ -675,6 +695,42 @@ function executeAction(p, type, idx, val) {
     } 
     else if (type === 'chat') {
         logMsgLocal(`<span style="color:${p.color}"><b>${p.name}:</b></span> ${val}`);
+    }
+    else if (type === 'auction_start') { 
+        window.auctionData = { idx: idx, highestBid: val, highestBidder: -1 }; 
+        logMsgLocal(`📢 Почався аукціон на <b>${mapData[idx].name.replace('<br>',' ')}</b>!`);
+        openAuctionModal(); 
+        return; 
+    }
+    else if (type === 'auction_bid') { 
+        window.auctionData.highestBid = val; 
+        window.auctionData.highestBidder = p.id; 
+        playSound('sfx-step');
+        if(document.getElementById('auc-bid')) {
+            document.getElementById('auc-bid').innerText = `i₴${val}`; 
+            document.getElementById('auc-leader').innerText = p.name;
+        } else {
+            openAuctionModal();
+        }
+        return;
+    }
+    else if (type === 'auction_pass') {
+        logMsgLocal(`${p.name} виходить з торгів.`);
+        return;
+    }
+    else if (type === 'auction_finish') {
+        if (window.auctionData.highestBidder === -1) {
+            logMsgLocal(`Аукціон завершено. Ділянка нічия.`);
+        } else {
+            let winner = players.find(x => x.id === window.auctionData.highestBidder);
+            winner.money -= window.auctionData.highestBid;
+            properties[window.auctionData.idx] = { owner: winner.id, houses: 0, isMortgaged: false };
+            logMsgLocal(`🔨 <b>${winner.name}</b> виграв аукціон за i₴${window.auctionData.highestBid}!`);
+            playSound('sfx-earn');
+            document.getElementById(`cell-${window.auctionData.idx}`).style.border = `3px solid ${winner.color}`;
+        }
+        processNextTurn(players[turn]);
+        return;
     }
 
     if (isOnlineMode && p.id === myMultiplayerId && type !== 'chat' && type !== 'think') {
@@ -1318,8 +1374,8 @@ function handleLanding(index, p) {
                 } else { 
                     setTimeout(() => executeAction(p, 'pass', index, 0), 1000); 
                 }
-            } else { 
-                openModal(`Купівля`, `<p style="font-size:16px; margin-bottom:5px;">Купити <b>${cell.name.replace('<br>',' ')}</b>?</p><p style="margin-top:0;">Ціна: <b style="color:#10b981; font-size:18px;">i₴${cell.price}</b></p>`, `<button class="btn-green" onclick="confirmAction('buy', ${index}, ${cell.price})" ${p.money < cell.price ? 'disabled' : ''}>Купити</button><button class="btn-red" onclick="confirmAction('pass', ${index}, 0)">Відмовитись</button>`); 
+} else { 
+                openModal(`Купівля`, `<p style="font-size:16px; margin-bottom:5px;">Купити <b>${cell.name.replace('<br>',' ')}</b>?</p><p style="margin-top:0;">Ціна: <b style="color:#10b981; font-size:18px;">i₴${cell.price}</b></p>`, `<button class="btn-green" onclick="confirmAction('buy', ${index}, ${cell.price})" ${p.money < cell.price ? 'disabled' : ''}>Купити</button><button class="btn-red" onclick="confirmAction('auction_start', ${index}, Math.floor(${cell.price}/2))">Аукціон</button>`); 
             }
         } else if (prop.owner !== p.id && !prop.isMortgaged) { 
             let rent = cell.baseRent;
@@ -1713,4 +1769,23 @@ function forceBankrupt() {
     if (!processDebts()) { 
         processNextTurn(p);
     } 
+}
+function openAuctionModal() {
+    let cell = mapData[window.auctionData.idx];
+    let leaderName = window.auctionData.highestBidder !== -1 ? players.find(p => p.id === window.auctionData.highestBidder).name : "немає";
+    
+    let finishBtn = (isOnlineMode && players.find(p=>p.id===myMultiplayerId)?.isHost) 
+        ? `<button class="btn-blue" style="margin-top:10px; width:100%;" onclick="confirmAction('auction_finish', window.auctionData.idx, 0)">Закрити торги (Ви Хост)</button>` 
+        : (!isOnlineMode ? `<button class="btn-blue" style="margin-top:10px; width:100%;" onclick="confirmAction('auction_finish', window.auctionData.idx, 0)">Віддати лідеру</button>` : '');
+
+    openModal(`🔨 АУКЦІОН: ${cell.name.replace('<br>',' ')}`, 
+        `<p style="font-size:18px;">Ставка: <b id="auc-bid" style="color:#10b981;">i₴${window.auctionData.highestBid}</b></p>
+         <p>Лідер: <span id="auc-leader" style="color:#f59e0b; font-weight:bold;">${leaderName}</span></p>`,
+        `<div style="display:flex; gap:5px; margin-bottom:5px;">
+            <button class="btn-green" onclick="confirmAction('auction_bid', window.auctionData.idx, window.auctionData.highestBid + 100)">+100</button>
+            <button class="btn-gold" onclick="confirmAction('auction_bid', window.auctionData.idx, window.auctionData.highestBid + 500)">+500</button>
+         </div>
+         <button class="btn-red" style="width:100%;" onclick="confirmAction('auction_pass', window.auctionData.idx, 0)">Я пас (не беру участь)</button>
+         ${finishBtn}`
+    );
 }
