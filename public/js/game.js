@@ -1887,3 +1887,78 @@ function logoutAction() {
         location.reload();
     }
 }
+// ==========================================
+// === ЛОГІКА КРАМНИЦІ (ГАЛУШКИ ТА ФІШКИ) ===
+// ==========================================
+
+function updateShopUI() {
+    let warning = document.getElementById('shop-auth-warning');
+    let container = document.getElementById('shop-container');
+    
+    if (currentUser) {
+        if(warning) warning.style.display = 'none';
+        if(container) container.style.display = 'block';
+        
+        let balanceEl = document.getElementById('shop-balance');
+        if(balanceEl) balanceEl.innerText = (currentUser.galushky || 0) + ' 🥟';
+        
+        // Показуємо кнопку "Вдягнути", якщо товар уже куплено
+        let items = ['token_gold', 'token_bogdan', 'token_tank'];
+        items.forEach(item => {
+            let btnEquip = document.getElementById('equip-' + item);
+            if(btnEquip) {
+                if (currentUser.inventory && currentUser.inventory.includes(item)) {
+                    btnEquip.style.display = 'block'; 
+                    if (currentUser.equippedToken === item) {
+                        btnEquip.innerText = '✅ Вдягнено';
+                        btnEquip.className = 'btn-gold'; // Золотий колір для вдягненого
+                    } else {
+                        btnEquip.innerText = 'Вдягнути';
+                        btnEquip.className = 'btn-green';
+                    }
+                } else {
+                    btnEquip.style.display = 'none';
+                }
+            }
+        });
+    } else {
+        if(warning) warning.style.display = 'block';
+        if(container) container.style.display = 'none';
+    }
+}
+
+// Перехоплюємо оновлення профілю, щоб магазин теж оновлювався
+const originalUpdateProfileUI = updateProfileUI;
+updateProfileUI = function() {
+    if(typeof originalUpdateProfileUI === 'function') originalUpdateProfileUI();
+    updateShopUI();
+};
+
+function buyItemAction(itemId) {
+    if (!currentUser) return alert("Спершу увійди в Профіль!");
+    if (!socket || !socket.connected) return alert("Немає зв'язку з сервером!");
+    
+    if (confirm("Точно хочеш купити цей предмет за Галушки?")) {
+        socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+            if (res.success) {
+                currentUser = res.user;
+                updateProfileUI(); 
+                alert("🎉 " + res.msg);
+            } else {
+                alert("❌ " + res.msg);
+            }
+        });
+    }
+}
+
+function equipItemAction(itemId) {
+    if (!socket || !socket.connected) return;
+    socket.emit('equipToken', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+        if (res.success) {
+            currentUser = res.user;
+            updateProfileUI();
+        } else {
+            alert("❌ " + res.msg);
+        }
+    });
+}
