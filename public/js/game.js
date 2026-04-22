@@ -661,9 +661,12 @@ function confirmAction(type, idx, val) {
 
 function executeAction(p, type, idx, val) {
     if (type === 'buy') {
-        p.money -= mapData[idx].price;
+        p.money -= val;
         properties[idx] = { owner: p.id, houses: 0, isMortgaged: false };
-        logMsgLocal(`<b>${p.name}</b> купив <b>${mapData[idx].name}</b>.`);
+        
+        let randBuy = buyMsgs[Math.floor(Math.random() * buyMsgs.length)];
+        logMsgLocal(`🏙️ <b><span style="color:${p.color}">${p.name}</span></b> ${randBuy} <b>${mapData[idx].name.replace('<br>',' ')}</b>!`);
+        
         document.getElementById(`cell-${idx}`).style.border = `3px solid ${p.color}`;
         playSound('sfx-spend');
         processNextTurn(p);
@@ -672,7 +675,9 @@ function executeAction(p, type, idx, val) {
         const owner = players.find(pl => pl.id === properties[idx].owner);
         p.money -= val;
         owner.money += val;
-        logMsgLocal(`<b>${p.name}</b> сплатив i₴${val} гравцю <b>${owner.name}</b>.`);
+        
+        let randRent = rentMsgs[Math.floor(Math.random() * rentMsgs.length)];
+        logMsgLocal(`💸 <b><span style="color:${p.color}">${p.name}</span></b> ${randRent} <b><span style="color:${owner.color}">${owner.name}</span></b> (i₴${val}).`);
         
         if (['pink', 'green', 'orange'].includes(mapData[idx].group)) { stocks.RTL.pool += Math.ceil(val * 0.1); }
         if (['yellow'].includes(mapData[idx].group)) { stocks.PST.pool += Math.ceil(val * 0.1); }
@@ -680,7 +685,7 @@ function executeAction(p, type, idx, val) {
         if (mapData[idx].type === 'utility') { stocks.GOV.pool += Math.ceil(val * 0.2); }
         playSound('sfx-spend');
         processNextTurn(p);
-    } 
+    }
     else if (type === 'tax') {
         deductMoney(p, val);
         logMsgLocal(`<b>${p.name}</b> сплатив податок: i₴${val}.`);
