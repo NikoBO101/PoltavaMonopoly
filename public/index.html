@@ -23,6 +23,10 @@
         <div class="menu-header">ЕКОНОМІКА ПОЛТАВИ</div>
         <div class="menu-subheader">MULTIPLAYER EDITION</div>
         
+<button id="menu-music-toggle" class="btn-purple" style="width: 90%; max-width: 550px; margin-bottom: 10px; padding: 12px; font-size: 16px;" onclick="toggleMenuMusic()">🎵 Увімкнути музику меню</button>
+        
+        <button id="return-game-btn" class="btn-green" style="display:none; width: 90%; max-width: 550px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 0 20px #10b981;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
+
         <div class="menu-tabs">
             <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
             <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн</button>
@@ -30,8 +34,6 @@
             <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
             <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b;">👑 Розробник</button>
         </div>
-<button id="menu-music-toggle" class="btn-purple" style="width: 90%; max-width: 550px; margin-bottom: 10px; padding: 12px; font-size: 16px;" onclick="toggleMenuMusic()">🎵 Увімкнути музику меню</button>
-        <button id="return-game-btn" class="btn-green" style="display:none; width: 90%; max-width: 550px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 0 20px #10b981;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
         <div id="tab-newgame" class="tab-content active">
             <div class="setup-row">
                 <label>Гравців:</label>
