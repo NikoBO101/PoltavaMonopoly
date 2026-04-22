@@ -1827,33 +1827,24 @@ function openAuctionModal() {
 }
 // === ПРОФІЛЬ ТА ЛОГІН (Локальна версія) ===
 function updateProfileUI() {
-    let authForm = document.getElementById('auth-form');
-    let profileInfo = document.getElementById('profile-info');
-    let mpPlayerName = document.getElementById('mp-player-name'); // Поле "Ваше ім'я" в онлайні
+    let authSection = document.getElementById('auth-section');
+    let profileSection = document.getElementById('profile-section');
     
-    if (!authForm || !profileInfo) return;
-
     if (currentUser) {
-        authForm.style.display = 'none';
-        profileInfo.style.display = 'block';
+        authSection.style.display = 'none';
+        profileSection.style.display = 'block';
         
-        document.getElementById('user-display-name').innerText = currentUser.nick;
-        document.getElementById('user-wins').innerText = currentUser.wins || 0;
-        document.getElementById('user-active-title').innerText = currentUser.activeTitle || "Новачок";
-        document.getElementById('user-coins').innerText = currentUser.coins || 0;
-        
-        // Магія: якщо ти зайшов, твоє ім'я автоматично підставляється в онлайн-кімнати!
-        if (mpPlayerName) {
-            mpPlayerName.value = currentUser.nick;
-            mpPlayerName.disabled = true; // Забороняємо міняти ім'я без профілю
-        }
+        // Тут ми міняємо коїни на Галушки!
+        document.getElementById('profile-info').innerHTML = `
+            <strong>Гравець:</strong> ${currentUser.nick} <br>
+            <strong>Титул:</strong> ${currentUser.activeTitle} <br>
+            <strong>Перемоги:</strong> ${currentUser.wins} <br>
+            <strong>Баланс:</strong> ${currentUser.galushky || 100} 🥟 Галушок <br>
+            <strong>Фішка:</strong> ${currentUser.equippedToken === 'token_default' ? 'Стандартна' : 'Ексклюзивна'}
+        `;
     } else {
-        authForm.style.display = 'block';
-        profileInfo.style.display = 'none';
-        if (mpPlayerName) {
-            mpPlayerName.value = "Гравець";
-            mpPlayerName.disabled = false;
-        }
+        authSection.style.display = 'block';
+        profileSection.style.display = 'none';
     }
 }
 
