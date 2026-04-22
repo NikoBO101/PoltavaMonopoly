@@ -26,10 +26,18 @@ let myMultiplayerId = null;
 let currentLobby = null; 
 let pendingTrade = null;
 
-// Заглушка таймера, щоб не було помилок
 function stopTimer() {}
-
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+const dotL = { 
+    1:[0,0,0,0,1,0,0,0,0], 
+    2:[1,0,0,0,0,0,0,0,1], 
+    3:[1,0,0,0,1,0,0,0,1], 
+    4:[1,0,1,0,0,0,1,0,1], 
+    5:[1,0,1,0,1,0,1,0,1], 
+    6:[1,0,1,1,0,1,1,0,1] 
+};
+const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
 
 
 // === МЕРЕЖЕВА ЛОГІКА (SOCKET.IO) ===
@@ -89,8 +97,14 @@ if (socket) {
         currentRound = serverGameState.currentRound; 
         turn = serverGameState.turn; 
         
-        players = serverGameState.players.map(p => ({
-            ...p, money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, stockHistory: [], debtMode: false
+        // Гарантовано задаємо кольори
+        players = serverGameState.players.map((p, i) => ({
+            ...p, 
+            color: playerColors[i % playerColors.length], 
+            money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, 
+            inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, 
+            skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
+            stockHistory: [], debtMode: false
         }));
         
         document.getElementById('lobby-screen').style.display = 'none'; 
@@ -105,32 +119,15 @@ if (socket) {
     });
 
     socket.on('diceRolled', async (data) => {
-        if (isRolling || processDebts()) return; 
-        isRolling = true; 
-        updateUI();
-        playSound('sfx-dice'); 
-        
-        const d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
-        if (d1 && d2) {
-            d1.classList.add('rolling-anim'); 
-            d2.classList.add('rolling-anim');
-            for (let i = 0; i < 10; i++) { 
-                render2DDie('die1', Math.floor(Math.random()*6)+1); 
-                render2DDie('die2', Math.floor(Math.random()*6)+1); 
-                await sleep(50); 
-            }
-            d1.classList.remove('rolling-anim'); 
-            d2.classList.remove('rolling-anim');
+        await processRollAndMove(data.v1, data.v2);
+    });
+
+    // Обробка дій від інших гравців (Купівля, Оренда, Чат)
+    socket.on('syncAction', (data) => {
+        const actor = players.find(p => p.id === data.senderId);
+        if (actor) {
+            executeAction(actor, data.type, data.idx, data.val);
         }
-        
-        render2DDie('die1', data.v1); 
-        render2DDie('die2', data.v2); 
-        
-        lastDiceSum = data.v1 + data.v2; 
-        lastRollWasDouble = (data.v1 === data.v2);
-        
-        await sleep(300); 
-        await movePlayer(lastDiceSum);
     });
 
     socket.on('updateGameState', (stateData) => {
@@ -141,7 +138,6 @@ if (socket) {
         stocks = stateData.stocks; 
         currentRound = stateData.currentRound || currentRound;
         
-        // БРОНЕБІЙНИЙ ФІКС: Знімаємо блокування кнопок при отриманні стану
         isRolling = false;
         
         players.forEach(p => { 
@@ -156,9 +152,8 @@ if (socket) {
     });
 }
 
-// Жорстка синхронізація для всього
 function broadcastState() { 
-    if (isOnlineMode && isMyTurn() && currentLobby) { 
+    if (isOnlineMode && currentLobby) { 
         socket.emit('syncGameState', currentLobby.id, { 
             players, properties, turn, jackpotAmount, stocks, currentRound 
         }); 
@@ -203,6 +198,16 @@ function generatePlayerInputs() {
                 </label>
             </div>`;
     }
+}
+
+// Функція розблокування звуку при старті гри
+function unlockAudio() {
+    ['bgm', 'sfx-dice', 'sfx-step', 'sfx-earn', 'sfx-spend', 'sfx-bankrupt'].forEach(id => {
+        let el = document.getElementById(id);
+        if (el) {
+            el.play().then(() => { el.pause(); el.currentTime = 0; }).catch(() => {});
+        }
+    });
 }
 
 function updateVolume() {
@@ -302,12 +307,14 @@ function joinRoomByCode() {
 }
 
 function startOnlineGameAction() { 
+    unlockAudio();
     if (socket && currentLobby) { 
         socket.emit('startGame', currentLobby.id); 
     } 
 }
 
 function startLocalGame() {
+    unlockAudio();
     isOnlineMode = false; 
     changeRadio(); 
     currentRound = 1; 
@@ -476,6 +483,10 @@ function updateUI() {
   
     let activeP = isDebtActive ? players.find(p=>p.debtMode) : players[turn];
     let btnLoan = document.getElementById('loan-btn');
+    
+    // БЛОКУВАННЯ КНОПОК
+    let canAct = isMyTurn() && !isRolling;
+    
     if (activeP && activeP.loan > 0 && btnLoan) { 
         btnLoan.innerText = `💳 Погасити (i₴2500)`; 
         btnLoan.className = 'btn-red'; 
@@ -484,14 +495,12 @@ function updateUI() {
         btnLoan.className = 'btn-purple'; 
     }
   
-    let canAct = isMyTurn() && !isRolling;
-    
     let btnRoll = document.getElementById('roll-btn');
     if (btnRoll) btnRoll.disabled = !canAct || (players[turn] && players[turn].isBot && !isOnlineMode);
     
-    ['trade-btn', 'deposit-btn', 'crypto-btn', 'inv-btn', 'giveup-btn'].forEach(id => {
+    ['trade-btn', 'deposit-btn', 'crypto-btn', 'inv-btn', 'giveup-btn', 'loan-btn'].forEach(id => {
         let btn = document.getElementById(id);
-        if (btn) btn.disabled = !canAct;
+        if (btn) btn.disabled = !canAct; // Жорстко блокуємо все, якщо не твій хід
     });
   
     updatePropertyColors();
@@ -507,6 +516,98 @@ function logMsgLocal(msg) {
 function logMsg(msg) { 
     logMsgLocal(msg); 
     broadcastState(); 
+}
+
+
+// === ЧАТ ТА ДІЇ ===
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = '';
+    
+    let p = isOnlineMode ? players.find(x => x.id === myMultiplayerId) : players[turn];
+    if (!p) p = players[0];
+
+    if (isOnlineMode) {
+        socket.emit('playerAction', currentLobby.id, { type: 'chat', val: msg });
+    } else {
+        executeAction(p, 'chat', 0, msg);
+    }
+}
+
+// ЄДИНИЙ ЦЕНТР ОБРОБКИ ДІЙ (Для онлайну і локалки)
+function confirmAction(type, idx, val) {
+    closeModal();
+    let p = players[turn];
+    
+    if (isOnlineMode) {
+        socket.emit('playerAction', currentLobby.id, { type: type, idx: idx, val: val });
+    } else {
+        executeAction(p, type, idx, val);
+    }
+}
+
+function executeAction(p, type, idx, val) {
+    if (type === 'buy') {
+        p.money -= mapData[idx].price;
+        properties[idx] = { owner: p.id, houses: 0 };
+        logMsgLocal(`<b>${p.name}</b> купив <b>${mapData[idx].name}</b>.`);
+        document.getElementById(`cell-${idx}`).style.border = `3px solid ${p.color}`;
+        playSound('sfx-spend');
+        processNextTurn(p);
+    } 
+    else if (type === 'rent') {
+        const owner = players.find(pl => pl.id === properties[idx].owner);
+        p.money -= val;
+        owner.money += val;
+        logMsgLocal(`<b>${p.name}</b> сплатив i₴${val} гравцю <b>${owner.name}</b>.`);
+        
+        if (['pink', 'green', 'orange'].includes(mapData[idx].group)) { stocks.RTL.pool += Math.ceil(val * 0.1); }
+        if (['yellow'].includes(mapData[idx].group)) { stocks.PST.pool += Math.ceil(val * 0.1); }
+        if (['station'].includes(mapData[idx].group)) { stocks.TRN.pool += Math.ceil(val * 0.1); }
+        if (mapData[idx].type === 'utility') { stocks.GOV.pool += Math.ceil(val * 0.2); }
+        playSound('sfx-spend');
+        processNextTurn(p);
+    } 
+    else if (type === 'tax') {
+        deductMoney(p, val);
+        logMsgLocal(`<b>${p.name}</b> сплатив податок: i₴${val}.`);
+        processNextTurn(p);
+    } 
+    else if (type === 'pass') {
+        logMsgLocal(`<b>${p.name}</b> відмовився від покупки.`);
+        processNextTurn(p);
+    } 
+    else if (type === 'think') {
+        logMsgLocal(`🤔 <span style="color:${p.color}">${p.name}</span> розглядає ділянку <b>${val}</b>...`);
+    } 
+    else if (type === 'chat') {
+        logMsgLocal(`<span style="color:${p.color}"><b>${p.name}:</b></span> ${val}`);
+    }
+
+    // Хто робив дію, той і синхронізує фінальний стан на сервер
+    if (isOnlineMode && p.id === myMultiplayerId && type !== 'chat' && type !== 'think') {
+        socket.emit('syncGameState', currentLobby.id, { players, properties, turn, jackpotAmount, stocks, currentRound });
+    }
+}
+
+function processNextTurn(activePlayer) {
+    if (processDebts()) return; 
+
+    if (lastRollWasDouble && !activePlayer.inJail && !activePlayer.isBankrupt) {
+        lastRollWasDouble = false;
+    } else {
+        do { 
+            turn = (turn + 1) % players.length; 
+            if (turn === 0) currentRound++; 
+        } while (players[turn].isBankrupt);
+    }
+    updateUI();
+
+    if (!isOnlineMode && players[turn].isBot && !players[turn].isBankrupt) {
+        setTimeout(() => userClickedRoll(), 1500);
+    }
 }
 
 
@@ -920,7 +1021,7 @@ async function processRollAndMove(v1, v2) {
             p.skipTurns--; 
             logMsg(`🛑 <b>${p.name}</b> пропускає хід!`); 
             isRolling = false;
-            if (isMyTurn()) return nextTurn(); 
+            if (isMyTurn()) return processNextTurn(p); 
             return; 
         }
         
@@ -964,7 +1065,7 @@ async function processRollAndMove(v1, v2) {
                 } else { 
                     logMsg(`🚫 <b>${p.name}</b> сумує за волею. (Хід ${p.jailTurns}/3)`); 
                     isRolling = false;
-                    if (isMyTurn()) return nextTurn(); 
+                    if (isMyTurn()) return processNextTurn(p); 
                     return; 
                 } 
             }
@@ -978,7 +1079,7 @@ async function processRollAndMove(v1, v2) {
                     p.doublesCount = 0; 
                     document.getElementById(`tokens-10`).appendChild(document.getElementById(`token-${p.id}`)); 
                     isRolling = false;
-                    if (isMyTurn()) return nextTurn(); 
+                    if (isMyTurn()) return processNextTurn(p); 
                     return; 
                 } 
                 logMsg(`🎲 ДУБЛЬ! Додатковий хід.`); 
@@ -1023,7 +1124,7 @@ async function movePlayer(steps) {
                     logMsg(isExactGo ? `<b>${p.name}</b> став РІВНО на СТАРТ! Премія: <b>+i₴4000</b>` : `<b>${p.name}</b> пройшов СТАРТ. Зарплата <b>+i₴2000</b>`); 
                     updateUI(); 
                 }
-                playSound('sfx-step');
+                playSound('sfx-earn');
             }
         }
         const targetArea = document.getElementById(`tokens-${p.pos}`); 
@@ -1037,7 +1138,6 @@ async function movePlayer(steps) {
         }
     }
     
-    // БРОНЕБІЙНИЙ ФІКС для онлайну
     if (isMyTurn()) {
         handleLanding(p.pos, p);
     } else {
@@ -1059,7 +1159,7 @@ function handleLanding(index, p) {
         lastRollWasDouble = false; 
         document.getElementById(`tokens-10`).appendChild(document.getElementById(`token-${p.id}`)); 
         logMsg(`<b>${p.name}</b> відправляється в Колонію!`); 
-        return nextTurn(); 
+        return processNextTurn(p); 
     }
     
     if (index === 20) { 
@@ -1072,20 +1172,20 @@ function handleLanding(index, p) {
             updateUI();
             
             if (!p.isBot) { 
-                openModal(`🎉 ДЖЕКПОТ ПАРКОВКИ!`, `<p style="font-size:24px; color:#10b981; font-weight:bold; margin:10px 0;">+i₴${j}</p>`, `<button class="btn-green" onclick="closeModal(); nextTurn();">Забрати гроші</button>`); 
+                openModal(`🎉 ДЖЕКПОТ ПАРКОВКИ!`, `<p style="font-size:24px; color:#10b981; font-weight:bold; margin:10px 0;">+i₴${j}</p>`, `<button class="btn-green" onclick="closeModal(); processNextTurn(players[turn]);">Забрати гроші</button>`); 
             } else { 
-                setTimeout(() => nextTurn(), 1500); 
+                setTimeout(() => processNextTurn(p), 1500); 
             }
             return;
         } 
-        return nextTurn(); 
+        return processNextTurn(p); 
     }
     
     if (cell.type === 'tax') { 
         if (p.isBot) { 
-            setTimeout(() => payTax(cell.amount), 1500); 
+            setTimeout(() => executeAction(p, 'tax', index, cell.amount), 1500); 
         } else { 
-            openModal(`Податок`, `<p style="font-size:16px;">Державний платіж. До сплати: <b style="color:#ef4444;">i₴${cell.amount}</b></p>`, `<button class="btn-red" onclick="payTax(${cell.amount})">Заплатити</button>`); 
+            openModal(`Податок`, `<p style="font-size:16px;">Державний платіж. До сплати: <b style="color:#ef4444;">i₴${cell.amount}</b></p>`, `<button class="btn-red" onclick="confirmAction('tax', ${index}, ${cell.amount})">Заплатити</button>`); 
         }
         return; 
     }
@@ -1106,97 +1206,49 @@ function handleLanding(index, p) {
     if (cell.price) {
         const prop = properties[index];
         if (!prop) { 
-            // КУПІВЛЯ
+            // ПОВІДОМЛЕННЯ В ЧАТ ПРО ДУМКУ
+            if (isOnlineMode) socket.emit('playerAction', currentLobby.id, { type: 'think', val: cell.name });
+            else executeAction(p, 'think', index, cell.name);
+
             if (p.isBot) {
                 let buffer = p.name.includes('Важк') ? 0 : 800;
                 if (p.money >= cell.price + buffer) { 
-                    setTimeout(() => buyProperty(index), 1500); 
+                    setTimeout(() => executeAction(p, 'buy', index, cell.price), 1500); 
                 } else { 
-                    setTimeout(() => skipProperty(), 1000); 
+                    setTimeout(() => executeAction(p, 'pass', index, 0), 1000); 
                 }
             } else { 
-                openModal(`Купівля`, `<p style="font-size:16px; margin-bottom:5px;">Купити <b>${cell.name.replace('<br>',' ')}</b>?</p><p style="margin-top:0;">Ціна: <b style="color:#10b981; font-size:18px;">i₴${cell.price}</b></p>`, `<button class="btn-green" onclick="buyProperty(${index})" ${p.money < cell.price ? 'disabled' : ''}>Купити</button><button class="btn-red" onclick="skipProperty()">Відмовитись</button>`); 
+                openModal(`Купівля`, `<p style="font-size:16px; margin-bottom:5px;">Купити <b>${cell.name.replace('<br>',' ')}</b>?</p><p style="margin-top:0;">Ціна: <b style="color:#10b981; font-size:18px;">i₴${cell.price}</b></p>`, `<button class="btn-green" onclick="confirmAction('buy', ${index}, ${cell.price})" ${p.money < cell.price ? 'disabled' : ''}>Купити</button><button class="btn-red" onclick="confirmAction('pass', ${index}, 0)">Відмовитись</button>`); 
             }
         } else if (prop.owner !== p.id && !prop.isMortgaged) { 
-            payRent(index, p, prop); 
+            let rent = cell.baseRent;
+            if (cell.type === 'utility') { 
+                let c = 0; for (let i in properties) { if (properties[i].owner === prop.owner && mapData[i].type === 'utility') c++; } 
+                rent = lastDiceSum * (c === 2 ? 250 : 100); 
+            } else if (cell.type === 'station') { 
+                let c = 0; for (let i in properties) { if (properties[i].owner === prop.owner && mapData[i].type === 'station') c++; } 
+                rent = cell.baseRent * Math.pow(2, c - 1); 
+            } else { 
+                const rentArr = getRentArray(cell.baseRent); rent = rentArr[prop.houses]; 
+                if (prop.houses === 0 && mapData.map((c, i) => ({c, i})).filter(x => x.c.group === cell.group).every(x => properties[x.i] && properties[x.i].owner === prop.owner)) { rent *= 2; } 
+            }
+
+            if (p.isBot) { 
+                setTimeout(() => executeAction(p, 'rent', index, rent), 1500); 
+            } else { 
+                const owner = players.find(pl => pl.id === prop.owner);
+                openModal(`Оренда`, `<p style="font-size:16px;">Власник: <b>${owner.name}</b><br>До сплати: <b style="color:#ef4444; font-size:18px;">i₴${rent}</b></p>`, `<button class="btn-red" onclick="confirmAction('rent', ${index}, ${rent})">Заплатити</button>`); 
+            }
         } else { 
-            nextTurn(); 
+            processNextTurn(p); 
         }
     } else { 
-        nextTurn(); 
+        processNextTurn(p); 
     }
 }
 
-function buyProperty(index) {
-    const p = players[turn]; 
-    const cell = mapData[index]; 
-    p.money -= cell.price; 
-    properties[index] = { owner: p.id, houses: 0, isMortgaged: false }; 
-    playSound('sfx-spend');
-    logMsg(`<b>${p.name}</b> купив <b>${cell.name.replace('<br>',' ')}</b>.`); 
-    updateUI(); 
-    closeModal(); 
-    if (!processDebts()) nextTurn();
-}
 
-function skipProperty() { 
-    closeModal(); 
-    nextTurn(); 
-}
-
-function payRent(index, p, propData) {
-    const cell = mapData[index]; 
-    const owner = players.find(pl => pl.id === propData.owner); 
-    let rent = 0;
-    
-    if (cell.type === 'utility') { 
-        let c = 0; 
-        for (let i in properties) { 
-            if (properties[i].owner === owner.id && mapData[i].type === 'utility') c++; 
-        } 
-        rent = lastDiceSum * (c === 2 ? 250 : 100); 
-    } else if (cell.type === 'station') { 
-        let c = 0; 
-        for (let i in properties) { 
-            if (properties[i].owner === owner.id && mapData[i].type === 'station') c++; 
-        } 
-        rent = cell.baseRent * Math.pow(2, c - 1); 
-    } else { 
-        const rentArr = getRentArray(cell.baseRent); 
-        rent = rentArr[propData.houses]; 
-        if (propData.houses === 0) { 
-            if (mapData.map((c, i) => ({c, i})).filter(x => x.c.group === cell.group).every(x => properties[x.i] && properties[x.i].owner === owner.id)) {
-                rent *= 2; 
-            }
-        } 
-    }
-
-    if (p.isBot) { 
-        setTimeout(() => payRentConfirm(index, owner.id, rent), 1500); 
-    } else { 
-        openModal(`Оренда`, `<p style="font-size:16px;">Власник: <b>${owner.name}</b><br>До сплати: <b style="color:#ef4444; font-size:18px;">i₴${rent}</b></p>`, `<button class="btn-red" onclick="payRentConfirm(${index}, ${owner.id}, ${rent})">Заплатити</button>`); 
-    }
-}
-
-function payRentConfirm(index, ownerId, rent) {
-    let p = players[turn]; 
-    let owner = players.find(pl => pl.id === ownerId); 
-    p.money -= rent; 
-    owner.money += rent; 
-    playSound('sfx-spend');
-    logMsg(`<b>${p.name}</b> сплатив i₴${rent} гравцю <b>${owner.name}</b>.`);
-    
-    if (['pink', 'green', 'orange'].includes(mapData[index].group)) { stocks.RTL.pool += Math.ceil(rent * 0.1); }
-    if (['yellow'].includes(mapData[index].group)) { stocks.PST.pool += Math.ceil(rent * 0.1); }
-    if (['station'].includes(mapData[index].group)) { stocks.TRN.pool += Math.ceil(rent * 0.1); }
-    if (mapData[index].type === 'utility') { stocks.GOV.pool += Math.ceil(rent * 0.2); }
-    
-    closeModal(); 
-    if (!processDebts()) nextTurn();
-}
-
-
-// === НЕРУХОМІСТЬ (БУДІВНИЦТВО ТА ІНФО) ===
+// === НЕРУХОМІСТЬ (ІНФО) ===
 function showPropertyInfo(index) {
     const cell = mapData[index]; 
     if (!cell.price) return;
@@ -1342,7 +1394,7 @@ function payTax(amount) {
     deductMoney(players[turn], amount); 
     logMsg(`Сплачено податок: i₴${amount}`); 
     closeModal(); 
-    if (!processDebts()) nextTurn(); 
+    if (!processDebts()) processNextTurn(players[turn]); 
 }
 
 function applyCard() {
@@ -1460,7 +1512,7 @@ function applyCard() {
         });
     }
     updateUI(); 
-    if (!processDebts()) nextTurn();
+    if (!processDebts()) processNextTurn(p);
 }
 
 
@@ -1509,13 +1561,14 @@ function checkDebtResolution() {
         logMsg(`✅ <b>${debtor.name}</b> успішно погасив заборгованість.`);
         if (!processDebts()) { 
             updateUI(); 
-            if (isRolling) { nextTurn(); } 
+            if (isRolling) { processNextTurn(debtor); } 
             broadcastState(); 
         }
     }
 }
 
 function giveUpConfirm() { 
+    if (!isMyTurn()) return;
     let p = players.find(x => x.debtMode) || players[turn]; 
     openModal("🏳️ Здатися", `<p style="font-size:16px;"><b>${p.name}</b>, ти дійсно хочеш оголосити себе банкрутом і вийти з гри?</p>`, `<button class="btn-red" onclick="forceBankrupt()">Так, я банкрут</button><button class="btn-blue" onclick="closeModal()">Ні, я ще поборюсь</button>`); 
 }
@@ -1557,51 +1610,6 @@ function forceBankrupt() {
     }
     
     if (!processDebts()) { 
-        if (p.id === players[turn].id) nextTurn(); 
-        else broadcastState(); 
+        processNextTurn(p);
     } 
-}
-
-
-// === КІНЕЦЬ ХОДУ ТА ОНОВЛЕННЯ РАУНДІВ ===
-function nextTurn() { 
-    isRolling = false;
-    
-    if (Math.random() < 0.1) { 
-        stocks.PTC.price = Math.floor(stocks.PTC.price * 0.3); 
-        stocks.PTC.trend = 'down'; 
-        logMsg(`📉 КРАХ КРИПТИ! PTC падає до i₴${stocks.PTC.price}`); 
-    } else { 
-        let r = Math.random() * (1.6 - 0.7) + 0.7; 
-        stocks.PTC.price = Math.floor(stocks.PTC.price * r); 
-        stocks.PTC.trend = r >= 1 ? 'up' : 'down'; 
-    }
-    
-    if (stocks.PTC.price < 50) stocks.PTC.price = 50; 
-    if (stocks.PTC.price > 10000) stocks.PTC.price = 10000;
-  
-    ['RTL', 'TRN', 'PST'].forEach(sym => { 
-        stocks[sym].noVisit++; 
-        if (stocks[sym].noVisit > 4) { 
-            stocks[sym].price = Math.max(100, stocks[sym].price - 100); 
-            stocks[sym].trend = 'down'; 
-        } 
-    });
-    
-    distributeDividends('RTL'); 
-    distributeDividends('TRN'); 
-    distributeDividends('PST'); 
-    distributeDividends('GOV');
-
-    if (lastRollWasDouble && !players[turn].inJail && !players[turn].isBankrupt) { 
-        lastRollWasDouble = false; 
-    } else { 
-        do { 
-            turn = (turn + 1) % players.length; 
-            if (turn === 0) currentRound++; 
-        } while (players[turn].isBankrupt); 
-    }
-  
-    updateUI(); 
-    broadcastState();
 }
