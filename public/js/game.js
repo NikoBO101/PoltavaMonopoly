@@ -1,18 +1,18 @@
-// === ГЛОБАЛЬНІ ЗМІННІ ===
-let players = []; 
-let turn = 0; 
-let properties = {}; 
-let jackpotAmount = 0;
-let lastRollWasDouble = false; 
-let lastDiceSum = 0; 
-let isRolling = false;
-let currentRound = 1; 
-let debtAlertShown = false; 
-let jackpotRate = 0.5;
-let isOnlineMode = false;
+// === ГЛОБАЛЬНІ ЗМІННІ (БЕЗПЕЧНІ) ===
+var players = []; 
+var turn = 0; 
+var properties = {}; 
+var jackpotAmount = 0;
+var lastRollWasDouble = false; 
+var lastDiceSum = 0; 
+var isRolling = false;
+var currentRound = 1; 
+var debtAlertShown = false; 
+var jackpotRate = 0.5;
+var isOnlineMode = false;
 
 // Повноцінна Біржа
-let stocks = { 
+var stocks = { 
     PTC: { price: 500, pool: 0, trend: 'up', noVisit: 0 }, 
     RTL: { price: 1000, pool: 0, trend: 'up', noVisit: 0 }, 
     TRN: { price: 1000, pool: 0, trend: 'up', noVisit: 0 }, 
@@ -21,13 +21,39 @@ let stocks = {
 };
 
 // Мережеві змінні
-const socket = typeof io !== 'undefined' ? io() : null;
-let myMultiplayerId = null; 
-let currentLobby = null; 
-let pendingTrade = null;
+var socket = typeof io !== 'undefined' ? io() : null;
+var myMultiplayerId = null; 
+var currentLobby = null; 
+var pendingTrade = null;
 
-function stopTimer() {}
+var dotL = { 
+    1:[0,0,0,0,1,0,0,0,0], 2:[1,0,0,0,0,0,0,0,1], 3:[1,0,0,0,1,0,0,0,1], 
+    4:[1,0,1,0,0,0,1,0,1], 5:[1,0,1,0,1,0,1,0,1], 6:[1,0,1,1,0,1,1,0,1] 
+};
+var playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+
+// === ФЕЙКОВИЙ ОНЛАЙН ТА КІМНАТИ ===
+let fakeBaseOnline = 18;
+setInterval(() => {
+    if (!currentLobby && !isOnlineMode) {
+        let fluct = Math.floor(Math.random() * 5) - 2; 
+        fakeBaseOnline += fluct;
+        if (fakeBaseOnline < 12) fakeBaseOnline = 12;
+        if (fakeBaseOnline > 35) fakeBaseOnline = 35;
+        let badge = document.getElementById('online-badge');
+        if (badge) badge.innerText = `🟢 Онлайн: ${fakeBaseOnline}`;
+    }
+}, 8000);
+
+const fakeRooms = [
+    { id: 'V1P9', name: 'Полтава VIP', hasPassword: true, playersCount: 3, status: 'waiting', isFake: true },
+    { id: 'G4ME', name: 'На мільйон', hasPassword: false, playersCount: 4, status: 'playing', isFake: true },
+    { id: 'N00B', name: 'Тільки новачки', hasPassword: false, playersCount: 2, status: 'waiting', isFake: true },
+    { id: 'PROX', name: 'Турнір', hasPassword: false, playersCount: 6, status: 'playing', isFake: true }
+];
 
 
 // === МЕРЕЖЕВА ЛОГІКА (SOCKET.IO) ===
@@ -37,31 +63,13 @@ if (socket) {
     });
     
     socket.on('globalOnlineCount', (count) => { 
+        fakeBaseOnline = 15 + count * 2; // Додаємо реальних гравців до фейкових
         let el = document.getElementById('online-badge'); 
-        if(el) el.innerText = `🟢 Онлайн: ${count}`; 
+        if(el) el.innerText = `🟢 Онлайн: ${fakeBaseOnline}`; 
     });
     
     socket.on('updateRoomsList', (roomsList) => {
-        const container = document.getElementById('mp-room-list'); 
-        if (!container) return;
-        if (roomsList.length === 0) { 
-            container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:10px;">Немає відкритих кімнат.</div>'; 
-            return; 
-        }
-        let html = '';
-        roomsList.forEach(r => {
-            let lock = r.hasPassword ? '🔒' : '🔓'; 
-            let status = r.status === 'waiting' ? '<span style="color:#10b981;">Очікування</span>' : '<span style="color:#ef4444;">В грі</span>';
-            html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px; margin-bottom:5px;">
-                    <div>
-                        <b>${r.name}</b> <span style="font-size:10px; color:#94a3b8;">(Код: ${r.id})</span><br>
-                        <span style="font-size:11px;">${lock} Гравців: ${r.playersCount}/6 | ${status}</span>
-                    </div>
-                    <button class="btn-green" style="width:auto; margin:0;" onclick="joinRoomFromList('${r.id}', ${r.hasPassword})">Увійти</button>
-                </div>`;
-        });
-        container.innerHTML = html;
+        renderRoomsList(roomsList);
     });
     
     socket.on('roomJoined', (roomData) => {
@@ -140,6 +148,50 @@ if (socket) {
     });
 }
 
+function renderRoomsList(realRooms) {
+    const container = document.getElementById('mp-room-list'); 
+    if (!container) return;
+    
+    let allRooms = [...realRooms, ...fakeRooms]; // Змішуємо реальні з фейковими
+    
+    if (allRooms.length === 0) { 
+        container.innerHTML = '<div style="color:#94a3b8; text-align:center; padding:10px;">Немає відкритих кімнат.</div>'; 
+        return; 
+    }
+    
+    let html = '';
+    allRooms.forEach(r => {
+        let lock = r.hasPassword ? '🔒' : '🔓'; 
+        let status = r.status === 'waiting' ? '<span style="color:#10b981;">Очікування</span>' : '<span style="color:#ef4444;">В грі</span>';
+        
+        html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px; margin-bottom:5px;">
+                <div>
+                    <b>${r.name}</b> <span style="font-size:10px; color:#94a3b8;">(Код: ${r.id})</span><br>
+                    <span style="font-size:11px;">${lock} Гравців: ${r.playersCount}/6 | ${status}</span>
+                </div>
+                <button class="btn-green" style="width:auto; margin:0;" onclick="handleJoinRoomClick('${r.id}', ${r.hasPassword}, ${r.isFake}, '${r.status}')">Увійти</button>
+            </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function handleJoinRoomClick(id, hasPass, isFake, status) {
+    if (status === 'playing') return alert("Гра вже йде, вхід заблоковано!");
+    
+    if (isFake) {
+        if (hasPass) {
+            let pass = prompt("Введіть пароль:");
+            if (pass !== null) alert("Невірний пароль!");
+            return;
+        } else {
+            return alert("Помилка з'єднання з хостом. Спробуйте іншу кімнату.");
+        }
+    }
+    
+    joinRoomFromList(id, hasPass);
+}
+
 function forceSyncState() {
     if (isOnlineMode && currentLobby) {
         socket.emit('syncGameState', currentLobby.id, { 
@@ -165,6 +217,7 @@ function isMyTurn() {
 document.addEventListener("DOMContentLoaded", () => { 
     generatePlayerInputs(); 
     updateVolume(); 
+    if(!socket) renderRoomsList([]); // Якщо нема сервера, малюємо фейкові кімнати
 });
 
 function switchTab(tabId) { 
@@ -194,19 +247,28 @@ function generatePlayerInputs() {
     }
 }
 
-// Функція розблокування звуку при старті гри
+// 100% РОБОЧИЙ ЗАПУСК ЗВУКІВ
 function unlockAudio() {
-    ['bgm', 'sfx-dice', 'sfx-step', 'sfx-earn', 'sfx-spend', 'sfx-bankrupt'].forEach(id => {
+    const audios = ['bgm', 'sfx-dice', 'sfx-step', 'sfx-earn', 'sfx-spend', 'sfx-bankrupt'];
+    audios.forEach(id => {
         let el = document.getElementById(id);
         if (el) {
-            el.play().then(() => { el.pause(); el.currentTime = 0; }).catch(() => {});
+            el.volume = 0; // Робимо тихо, щоб не вдарило по вухах
+            let playPromise = el.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => { 
+                    el.pause(); 
+                    el.currentTime = 0; 
+                    updateVolume(); // Повертаємо нормальну гучність
+                }).catch(err => { console.log("Аудіо заблоковано браузером: ", err); });
+            }
         }
     });
 }
 
 function updateVolume() {
     let bgmVol = document.getElementById('vol-bgm') ? document.getElementById('vol-bgm').value / 100 : 0.2; 
-    let sfxVol = document.getElementById('vol-sfx') ? document.getElementById('vol-sfx').value / 100 : 0.5;
+    let sfxVol = document.getElementById('vol-sfx') ? document.getElementById('vol-sfx').value / 100 : 0.8;
     
     if (document.getElementById('vol-bgm-val')) document.getElementById('vol-bgm-val').innerText = `${Math.round(bgmVol*100)}%`;
     if (document.getElementById('vol-sfx-val')) document.getElementById('vol-sfx-val').innerText = `${Math.round(sfxVol*100)}%`;
@@ -227,7 +289,7 @@ function changeRadio() {
         bgm.pause(); 
     } else { 
         bgm.src = val; 
-        bgm.play().catch(e => console.log("Автовідтворення заблоковано браузером")); 
+        bgm.play().catch(e => {}); 
     } 
 }
 
@@ -297,6 +359,13 @@ function joinRoomByCode() {
     if (!pName) return alert("Введіть ваше ім'я!"); 
     const code = document.getElementById('mp-join-code').value.trim().toUpperCase(); 
     if (!code) return alert("Введіть код кімнати!"); 
+    
+    // Перевірка на фейковий код
+    let fakeRoom = fakeRooms.find(r => r.id === code);
+    if (fakeRoom) {
+        return handleJoinRoomClick(fakeRoom.id, fakeRoom.hasPassword, true, fakeRoom.status);
+    }
+    
     socket.emit('joinRoom', { roomId: code, playerName: pName, password: document.getElementById('mp-join-pass').value.trim() }); 
 }
 
@@ -308,7 +377,7 @@ function startOnlineGameAction() {
 }
 
 function startLocalGame() {
-    unlockAudio();
+    unlockAudio(); // РОЗБЛОКОВУЄМО ЗВУК
     isOnlineMode = false; 
     changeRadio(); 
     currentRound = 1; 
@@ -504,7 +573,7 @@ function updateUI() {
 
 function logMsgLocal(msg) { 
     const log = document.getElementById('log'); 
-    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">• ${msg}</div>` + log.innerHTML; 
+    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">${msg}</div>` + log.innerHTML; 
     log.scrollTop = 0;
 }
 
@@ -1129,7 +1198,7 @@ async function movePlayer(steps) {
                     logMsg(isExactGo ? `<b>${p.name}</b> став РІВНО на СТАРТ! Премія: <b>+i₴4000</b>` : `<b>${p.name}</b> пройшов СТАРТ. Зарплата <b>+i₴2000</b>`); 
                     updateUI(); 
                 }
-                playSound('sfx-step');
+                playSound('sfx-earn');
             }
         }
         const targetArea = document.getElementById(`tokens-${p.pos}`); 
@@ -1303,7 +1372,7 @@ function showPropertyInfo(index) {
             btns += `<button class="btn-blue" onclick="unmortgage(${index}, ${unmortgageValue})" ${viewer.debtMode?'disabled':''}>Викупити (-i₴${unmortgageValue})</button>`; 
         }
     } else if (!prop) { 
-        btns += `<button class="btn-blue" onclick="closeModal()">Ок</button>`; 
+        btns += `<button class="btn-blue" onclick="closeModal()">Закрити</button>`; 
     }
     
     openModal("Інформація", html, btns);
