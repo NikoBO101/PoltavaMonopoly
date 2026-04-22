@@ -26,9 +26,7 @@ let myMultiplayerId = null;
 let currentLobby = null; 
 let pendingTrade = null;
 
-// Заглушка таймера, щоб не було помилок
 function stopTimer() {}
-
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 
@@ -89,8 +87,14 @@ if (socket) {
         currentRound = serverGameState.currentRound; 
         turn = serverGameState.turn; 
         
-        players = serverGameState.players.map(p => ({
-            ...p, money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, stockHistory: [], debtMode: false
+        // Виправляємо баг з відсутністю кольору фішки
+        players = serverGameState.players.map((p, i) => ({
+            ...p, 
+            color: playerColors[i % playerColors.length], 
+            money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, 
+            inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, 
+            skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
+            stockHistory: [], debtMode: false
         }));
         
         document.getElementById('lobby-screen').style.display = 'none'; 
@@ -105,32 +109,8 @@ if (socket) {
     });
 
     socket.on('diceRolled', async (data) => {
-        if (isRolling || processDebts()) return; 
-        isRolling = true; 
-        updateUI();
-        playSound('sfx-dice'); 
-        
-        const d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
-        if (d1 && d2) {
-            d1.classList.add('rolling-anim'); 
-            d2.classList.add('rolling-anim');
-            for (let i = 0; i < 10; i++) { 
-                render2DDie('die1', Math.floor(Math.random()*6)+1); 
-                render2DDie('die2', Math.floor(Math.random()*6)+1); 
-                await sleep(50); 
-            }
-            d1.classList.remove('rolling-anim'); 
-            d2.classList.remove('rolling-anim');
-        }
-        
-        render2DDie('die1', data.v1); 
-        render2DDie('die2', data.v2); 
-        
-        lastDiceSum = data.v1 + data.v2; 
-        lastRollWasDouble = (data.v1 === data.v2);
-        
-        await sleep(300); 
-        await movePlayer(lastDiceSum);
+        // Використовуємо ту саму логіку, що й у локальній грі, щоб не було зависань
+        await processRollAndMove(data.v1, data.v2);
     });
 
     socket.on('updateGameState', (stateData) => {
@@ -153,7 +133,6 @@ if (socket) {
     });
 }
 
-// Жорстка синхронізація для всього
 function broadcastState() { 
     if (isOnlineMode && isMyTurn() && currentLobby) { 
         socket.emit('syncGameState', currentLobby.id, { 
@@ -888,6 +867,13 @@ function userClickedRoll() {
 }
 
 async function startTurnLocal() {
+    let v1 = Math.floor(Math.random() * 6) + 1; 
+    let v2 = Math.floor(Math.random() * 6) + 1; 
+    await processRollAndMove(v1, v2);
+}
+
+// Виправлено: єдина логіка для онлайну та локалки, щоб не було зависань
+async function processRollAndMove(v1, v2) {
     if (isRolling || processDebts()) return; 
     isRolling = true; 
     updateUI();
@@ -903,18 +889,18 @@ async function startTurnLocal() {
                 deductMoney(p, 2500); 
                 p.loan = 0; 
                 p.loanTurns = 0; 
-                if (processDebts()) return; 
+                if (processDebts()) { isRolling = false; return; }
             } 
         }
         
         if (p.skipTurns > 0) { 
             p.skipTurns--; 
             logMsg(`🛑 <b>${p.name}</b> пропускає хід!`); 
-            return nextTurn(); 
+            isRolling = false;
+            if (isMyTurn()) return nextTurn(); 
+            return; 
         }
         
-        let v1 = Math.floor(Math.random() * 6) + 1; 
-        let v2 = Math.floor(Math.random() * 6) + 1; 
         const isDouble = (v1 === v2);
         
         playSound('sfx-dice'); 
@@ -922,13 +908,11 @@ async function startTurnLocal() {
         if (d1 && d2) {
             d1.classList.add('rolling-anim'); 
             d2.classList.add('rolling-anim');
-            
             for (let i = 0; i < 10; i++) { 
                 render2DDie('die1', Math.floor(Math.random() * 6) + 1); 
                 render2DDie('die2', Math.floor(Math.random() * 6) + 1); 
                 await sleep(50); 
             }
-            
             d1.classList.remove('rolling-anim'); 
             d2.classList.remove('rolling-anim');
         }
@@ -953,10 +937,12 @@ async function startTurnLocal() {
                     deductMoney(p, 1000); 
                     p.inJail = false; 
                     p.jailTurns = 0; 
-                    if (processDebts()) return; 
+                    if (processDebts()) { isRolling = false; return; }
                 } else { 
                     logMsg(`🚫 <b>${p.name}</b> сумує за волею. (Хід ${p.jailTurns}/3)`); 
-                    return nextTurn(); 
+                    isRolling = false;
+                    if (isMyTurn()) return nextTurn(); 
+                    return; 
                 } 
             }
         } else {
@@ -968,7 +954,9 @@ async function startTurnLocal() {
                     p.pos = 10; 
                     p.doublesCount = 0; 
                     document.getElementById(`tokens-10`).appendChild(document.getElementById(`token-${p.id}`)); 
-                    return nextTurn(); 
+                    isRolling = false;
+                    if (isMyTurn()) return nextTurn(); 
+                    return; 
                 } 
                 logMsg(`🎲 ДУБЛЬ! Додатковий хід.`); 
                 lastRollWasDouble = true; 
@@ -1012,19 +1000,27 @@ async function movePlayer(steps) {
                     logMsg(isExactGo ? `<b>${p.name}</b> став РІВНО на СТАРТ! Премія: <b>+i₴4000</b>` : `<b>${p.name}</b> пройшов СТАРТ. Зарплата <b>+i₴2000</b>`); 
                     updateUI(); 
                 }
-                playSound('sfx-earn');
+                playSound('sfx-step');
             }
         }
         const targetArea = document.getElementById(`tokens-${p.pos}`); 
-        token.classList.add('jumping'); 
-        playSound('sfx-step'); 
-        await sleep(150); 
-        targetArea.appendChild(token); 
-        token.classList.remove('jumping'); 
-        await sleep(100);
+        if (token && targetArea) {
+            token.classList.add('jumping'); 
+            playSound('sfx-step'); 
+            await sleep(150); 
+            targetArea.appendChild(token); 
+            token.classList.remove('jumping'); 
+            await sleep(100);
+        }
     }
     
-    if (isMyTurn()) handleLanding(p.pos, p);
+    // Виправлено: тільки активний гравець викликає картки і купівлю
+    if (isMyTurn()) {
+        handleLanding(p.pos, p);
+    } else {
+        // Інші гравці розблоковують інтерфейс і чекають рішення
+        isRolling = false; 
+    }
 }
 
 
