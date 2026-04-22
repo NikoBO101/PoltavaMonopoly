@@ -9,8 +9,12 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // === ПІДКЛЮЧЕННЯ БАЗИ ДАНИХ (MongoDB) ===
-// УВАГА: ЗАМІНИ <NikAndLos> та <yyzqYXzRGEqTCyP7> НА СВОЇ!
-const uri = "mongodb+srv://NikAndLos:yyzqYXzRGEqTCyP7@cluster0.dh8g9kr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const uri = process.env.MONGODB_URI; // Тепер пароль береться з налаштувань Render
+
+if (!uri) {
+    console.error("❌ ПОМИЛКА: Змінна MONGODB_URI не налаштована в Environment!");
+}
+
 const client = new MongoClient(uri);
 let usersCollection;
 
