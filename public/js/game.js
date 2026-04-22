@@ -97,7 +97,6 @@ if (socket) {
         currentRound = serverGameState.currentRound; 
         turn = serverGameState.turn; 
         
-        // Гарантовано задаємо кольори
         players = serverGameState.players.map((p, i) => ({
             ...p, 
             color: playerColors[i % playerColors.length], 
@@ -122,7 +121,6 @@ if (socket) {
         await processRollAndMove(data.v1, data.v2);
     });
 
-    // Обробка дій від інших гравців (Купівля, Оренда, Чат)
     socket.on('syncAction', (data) => {
         const actor = players.find(p => p.id === data.senderId);
         if (actor) {
@@ -152,11 +150,17 @@ if (socket) {
     });
 }
 
-function broadcastState() { 
-    if (isOnlineMode && currentLobby) { 
+function forceSyncState() {
+    if (isOnlineMode && currentLobby) {
         socket.emit('syncGameState', currentLobby.id, { 
             players, properties, turn, jackpotAmount, stocks, currentRound 
-        }); 
+        });
+    }
+}
+
+function broadcastState() { 
+    if (isOnlineMode && isMyTurn() && currentLobby) { 
+        forceSyncState();
     } 
 }
 
@@ -498,9 +502,10 @@ function updateUI() {
     let btnRoll = document.getElementById('roll-btn');
     if (btnRoll) btnRoll.disabled = !canAct || (players[turn] && players[turn].isBot && !isOnlineMode);
     
+    // Жорстко блокуємо все, якщо не твій хід або летять кубики
     ['trade-btn', 'deposit-btn', 'crypto-btn', 'inv-btn', 'giveup-btn', 'loan-btn'].forEach(id => {
         let btn = document.getElementById(id);
-        if (btn) btn.disabled = !canAct; // Жорстко блокуємо все, якщо не твій хід
+        if (btn) btn.disabled = !canAct; 
     });
   
     updatePropertyColors();
@@ -509,7 +514,7 @@ function updateUI() {
 
 function logMsgLocal(msg) { 
     const log = document.getElementById('log'); 
-    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">• ${msg}</div>` + log.innerHTML; 
+    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">${msg}</div>` + log.innerHTML; 
     log.scrollTop = 0;
 }
 
@@ -536,7 +541,6 @@ function sendChat() {
     }
 }
 
-// ЄДИНИЙ ЦЕНТР ОБРОБКИ ДІЙ (Для онлайну і локалки)
 function confirmAction(type, idx, val) {
     closeModal();
     let p = players[turn];
@@ -551,7 +555,7 @@ function confirmAction(type, idx, val) {
 function executeAction(p, type, idx, val) {
     if (type === 'buy') {
         p.money -= mapData[idx].price;
-        properties[idx] = { owner: p.id, houses: 0 };
+        properties[idx] = { owner: p.id, houses: 0, isMortgaged: false };
         logMsgLocal(`<b>${p.name}</b> купив <b>${mapData[idx].name}</b>.`);
         document.getElementById(`cell-${idx}`).style.border = `3px solid ${p.color}`;
         playSound('sfx-spend');
@@ -586,14 +590,18 @@ function executeAction(p, type, idx, val) {
         logMsgLocal(`<span style="color:${p.color}"><b>${p.name}:</b></span> ${val}`);
     }
 
-    // Хто робив дію, той і синхронізує фінальний стан на сервер
     if (isOnlineMode && p.id === myMultiplayerId && type !== 'chat' && type !== 'think') {
-        socket.emit('syncGameState', currentLobby.id, { players, properties, turn, jackpotAmount, stocks, currentRound });
+        forceSyncState();
     }
 }
 
 function processNextTurn(activePlayer) {
     if (processDebts()) return; 
+
+    // БРОНЕБІЙНИЙ ФІКС: Синхронізуємо стан ПЕРЕД зміною ходу
+    if (isOnlineMode && activePlayer.id === myMultiplayerId) {
+        forceSyncState();
+    }
 
     if (lastRollWasDouble && !activePlayer.inJail && !activePlayer.isBankrupt) {
         lastRollWasDouble = false;
@@ -603,7 +611,14 @@ function processNextTurn(activePlayer) {
             if (turn === 0) currentRound++; 
         } while (players[turn].isBankrupt);
     }
+    
+    isRolling = false;
     updateUI();
+
+    // Синхронізуємо новий хід для всіх
+    if (isOnlineMode && activePlayer.id === myMultiplayerId) {
+        forceSyncState();
+    }
 
     if (!isOnlineMode && players[turn].isBot && !players[turn].isBankrupt) {
         setTimeout(() => userClickedRoll(), 1500);
@@ -1206,7 +1221,6 @@ function handleLanding(index, p) {
     if (cell.price) {
         const prop = properties[index];
         if (!prop) { 
-            // ПОВІДОМЛЕННЯ В ЧАТ ПРО ДУМКУ
             if (isOnlineMode) socket.emit('playerAction', currentLobby.id, { type: 'think', val: cell.name });
             else executeAction(p, 'think', index, cell.name);
 
