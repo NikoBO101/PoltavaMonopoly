@@ -95,7 +95,8 @@ if (socket) {
         if(el) el.innerText = `🟢 Онлайн: ${fakeBaseOnline}`; 
     });
     
-    socket.on('updateRoomsList', (roomsList) => {
+socket.on('updateRoomsList', (roomsList) => {
+        lastRealRooms = roomsList; // Додай цей рядок!
         renderRoomsList(roomsList);
     });
     
