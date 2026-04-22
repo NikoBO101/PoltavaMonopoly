@@ -8,13 +8,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// === ПІДКЛЮЧЕННЯ БАЗИ ДАНИХ (MongoDB) ===
-const uri = process.env.MONGODB_URI; // Тепер пароль береться з налаштувань Render
-
-if (!uri) {
-    console.error("❌ ПОМИЛКА: Змінна MONGODB_URI не налаштована в Environment!");
-}
-
+// === ПІДКЛЮЧЕННЯ БАЗИ ДАНИХ ===
+// Переконайся, що тут твоє посилання або змінна оточення Render
+const uri = process.env.MONGODB_URI; 
 const client = new MongoClient(uri);
 let usersCollection;
 
@@ -31,6 +27,13 @@ connectDB();
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+// === КАТАЛОГ МАГАЗИНУ ===
+const shopItems = {
+    'token_gold': { type: 'token', name: 'Золота Галушка', price: 500 },
+    'token_bogdan': { type: 'token', name: 'Полтавський Богдан', price: 300 },
+    'token_tank': { type: 'token', name: 'Танк', price: 1000 }
+};
+
 const rooms = {};
 let connectedPlayers = 0;
 
@@ -40,39 +43,62 @@ io.on('connection', (socket) => {
     
     socket.emit('updateRoomsList', getPublicRooms());
 
-    // === АВТОРИЗАЦІЯ ТА РЕЄСТРАЦІЯ (ПОКРАЩЕНА) ===
+    // === АВТОРИЗАЦІЯ ТА РЕЄСТРАЦІЯ ===
     socket.on('login', async (data, callback) => {
         if (!usersCollection) {
             return callback({ success: false, msg: "База даних завантажується..." });
         }
 
         let { nick, pin } = data;
-        // Переводимо нік у нижній регістр для пошуку, щоб уникнути клонів Nik / nik
         const searchNick = nick.toLowerCase();
 
         try {
             let user = await usersCollection.findOne({ nick: { $regex: new RegExp(`^${nick}$`, "i") } });
 
             if (user) {
-                // ГРАВЕЦЬ ІСНУЄ -> Перевіряємо PIN
                 if (user.pin === pin) {
+                    // АВТО-ОНОВЛЕННЯ СТАРИХ АКАУНТІВ (додаємо Галушки та Інвентар)
+                    let needsUpdate = false;
+                    let updateData = {};
+                    
+                    if (user.galushky === undefined) {
+                        updateData.galushky = user.coins || 100; // Конвертуємо старі коїни в галушки
+                        user.galushky = updateData.galushky;
+                        needsUpdate = true;
+                    }
+                    if (!user.inventory) {
+                        updateData.inventory = ['token_default'];
+                        user.inventory = updateData.inventory;
+                        needsUpdate = true;
+                    }
+                    if (!user.equippedToken) {
+                        updateData.equippedToken = 'token_default';
+                        user.equippedToken = updateData.equippedToken;
+                        needsUpdate = true;
+                    }
+
+                    if (needsUpdate) {
+                        await usersCollection.updateOne({ _id: user._id }, { $set: updateData });
+                    }
+
                     return callback({ success: true, user: user, msg: `З поверненням, ${user.nick}!` });
                 } else {
                     return callback({ success: false, msg: "❌ Цей нік уже зайнятий. Невірний PIN!" });
                 }
             } else {
-                // ГРАВЦЯ НЕМАЄ -> Реєструємо нового
                 const newUser = { 
                     nick: nick, 
                     pin: pin, 
                     wins: 0, 
                     activeTitle: "Новачок", 
-                    coins: 100, 
+                    galushky: 100, // Тепер стартовий капітал - Галушки!
                     titles: ["Новачок"],
+                    inventory: ['token_default'],
+                    equippedToken: 'token_default',
                     createdAt: new Date()
                 };
                 await usersCollection.insertOne(newUser);
-                return callback({ success: true, user: newUser, msg: "✅ Акаунт створено! Тобі нараховано 100 коїнів." });
+                return callback({ success: true, user: newUser, msg: "✅ Акаунт створено! Тобі нараховано 100 Галушок." });
             }
         } catch (err) {
             console.error("Помилка БД:", err);
@@ -80,6 +106,71 @@ io.on('connection', (socket) => {
         }
     });
 
+    // === КУПІВЛЯ ТОВАРУ ===
+    socket.on('buyItem', async (data, callback) => {
+        const { nick, pin, itemId } = data;
+        const item = shopItems[itemId];
+
+        if (!item) return callback({ success: false, msg: "Товар не знайдено!" });
+
+        try {
+            let user = await usersCollection.findOne({ nick: { $regex: new RegExp(`^${nick}$`, "i") } });
+            
+            if (!user || user.pin !== pin) {
+                return callback({ success: false, msg: "Помилка авторизації!" });
+            }
+
+            if (user.inventory && user.inventory.includes(itemId)) {
+                return callback({ success: false, msg: "Ти вже маєш цей предмет!" });
+            }
+
+            if ((user.galushky || 0) < item.price) {
+                return callback({ success: false, msg: `Не вистачає Галушок! Потрібно ${item.price} 🥟` });
+            }
+
+            // Знімаємо гроші і додаємо в інвентар
+            await usersCollection.updateOne(
+                { _id: user._id },
+                { 
+                    $inc: { galushky: -item.price },
+                    $push: { inventory: itemId }
+                }
+            );
+
+            // Оновлюємо дані для відправки клієнту
+            user.galushky -= item.price;
+            user.inventory.push(itemId);
+
+            callback({ success: true, user: user, msg: `✅ Успішно куплено: ${item.name}!` });
+        } catch (err) {
+            console.error("Помилка покупки:", err);
+            callback({ success: false, msg: "Помилка сервера під час покупки." });
+        }
+    });
+
+    // === ВИБІР ФІШКИ (ВДЯГНУТИ) ===
+    socket.on('equipToken', async (data, callback) => {
+        const { nick, pin, itemId } = data;
+
+        try {
+            let user = await usersCollection.findOne({ nick: { $regex: new RegExp(`^${nick}$`, "i") } });
+            
+            if (!user || user.pin !== pin) return callback({ success: false, msg: "Помилка авторизації!" });
+            
+            if (!user.inventory.includes(itemId)) {
+                return callback({ success: false, msg: "У тебе немає цієї фішки!" });
+            }
+
+            await usersCollection.updateOne({ _id: user._id }, { $set: { equippedToken: itemId } });
+            user.equippedToken = itemId;
+
+            callback({ success: true, user: user, msg: `✅ Фішку змінено!` });
+        } catch (err) {
+            callback({ success: false, msg: "Помилка зміни фішки." });
+        }
+    });
+
+    // Створення кімнати
     socket.on('createRoom', (data) => {
         const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
         rooms[roomId] = {
@@ -95,6 +186,7 @@ io.on('connection', (socket) => {
         io.emit('updateRoomsList', getPublicRooms());
     });
 
+    // Приєднання до кімнати
     socket.on('joinRoom', (data) => {
         const room = rooms[data.roomId];
         if (!room) return socket.emit('joinError', 'Кімнату не знайдено!');
@@ -109,6 +201,7 @@ io.on('connection', (socket) => {
         io.emit('updateRoomsList', getPublicRooms());
     });
 
+    // Запуск гри
     socket.on('startGame', (roomId) => {
         const room = rooms[roomId];
         if (room && room.players[0].id === socket.id) {
@@ -122,6 +215,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Кидок кубиків
     socket.on('rollDice', (roomId) => {
         const room = rooms[roomId];
         if (room && room.status === 'playing') {
@@ -131,6 +225,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Синхронізація дій
     socket.on('playerAction', (roomId, data) => {
         const room = rooms[roomId];
         if (room) {
