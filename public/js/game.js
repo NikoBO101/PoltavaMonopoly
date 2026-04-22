@@ -11,7 +11,7 @@ let debtAlertShown = false;
 let jackpotRate = 0.5;
 let isOnlineMode = false;
 
-// Біржа та акції
+// Повноцінна Біржа
 let stocks = { 
     PTC: { price: 500, pool: 0, trend: 'up', noVisit: 0 }, 
     RTL: { price: 1000, pool: 0, trend: 'up', noVisit: 0 }, 
@@ -26,8 +26,17 @@ let myMultiplayerId = null;
 let currentLobby = null; 
 let pendingTrade = null;
 
-// Заглушка для таймера (щоб гра не шукала стару функцію і не крашилась)
-function stopTimer() {} 
+const dotL = { 
+    1:[0,0,0,0,1,0,0,0,0], 
+    2:[1,0,0,0,0,0,0,0,1], 
+    3:[1,0,0,0,1,0,0,0,1], 
+    4:[1,0,1,0,0,0,1,0,1], 
+    5:[1,0,1,0,1,0,1,0,1], 
+    6:[1,0,1,1,0,1,1,0,1] 
+};
+const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 
 // === МЕРЕЖЕВА ЛОГІКА (SOCKET.IO) ===
@@ -86,7 +95,10 @@ if (socket) {
         isOnlineMode = true; 
         currentRound = serverGameState.currentRound; 
         turn = serverGameState.turn; 
-        players = serverGameState.players;
+        
+        players = serverGameState.players.map(p => ({
+            ...p, money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, stockHistory: [], debtMode: false
+        }));
         
         document.getElementById('lobby-screen').style.display = 'none'; 
         document.getElementById('main-menu').style.display = 'none'; 
@@ -106,22 +118,23 @@ if (socket) {
         playSound('sfx-dice'); 
         
         const d1 = document.getElementById('die1'), d2 = document.getElementById('die2');
-        d1.classList.add('rolling-anim'); 
-        d2.classList.add('rolling-anim');
-        
-        for (let i = 0; i < 10; i++) { 
-            render2DDie('die1', Math.floor(Math.random()*6)+1); 
-            render2DDie('die2', Math.floor(Math.random()*6)+1); 
-            await sleep(50); 
+        if (d1 && d2) {
+            d1.classList.add('rolling-anim'); 
+            d2.classList.add('rolling-anim');
+            for (let i = 0; i < 10; i++) { 
+                render2DDie('die1', Math.floor(Math.random()*6)+1); 
+                render2DDie('die2', Math.floor(Math.random()*6)+1); 
+                await sleep(50); 
+            }
+            d1.classList.remove('rolling-anim'); 
+            d2.classList.remove('rolling-anim');
         }
         
-        d1.classList.remove('rolling-anim'); 
-        d2.classList.remove('rolling-anim');
         render2DDie('die1', data.v1); 
         render2DDie('die2', data.v2); 
         
         lastDiceSum = data.v1 + data.v2; 
-       lastRollWasDouble = (v1 === v2);
+        lastRollWasDouble = (data.v1 === data.v2);
         
         await sleep(300); 
         await movePlayer(lastDiceSum);
@@ -147,6 +160,7 @@ if (socket) {
     });
 }
 
+// Жорстка синхронізація для всього
 function broadcastState() { 
     if (isOnlineMode && isMyTurn() && currentLobby) { 
         socket.emit('syncGameState', currentLobby.id, { 
@@ -187,7 +201,7 @@ function generatePlayerInputs() {
     for (let i = 0; i < c; i++) {
         cont.innerHTML += `
             <div style="display:flex; align-items:center; gap:8px;">
-                <input type="text" id="p${i}-name" value="${defs[i]}" style="flex-grow:1; padding:8px; border-radius:5px;">
+                <input type="text" id="p${i}-name" value="${defs[i]}" style="flex-grow:1; padding:8px; border-radius:5px; background:#0f172a; color:#fff; border:1px solid #475569;">
                 <label style="font-size:12px; font-weight:bold; color:#10b981; display:flex; align-items:center; gap:3px; background:rgba(0,0,0,0.5); padding:8px; border-radius:5px; cursor:pointer;">
                     <input type="checkbox" id="p${i}-isbot" ${defs[i].includes('Бот') ? 'checked' : ''}> Бот
                 </label>
@@ -302,7 +316,9 @@ function startLocalGame() {
     changeRadio(); 
     currentRound = 1; 
     jackpotAmount = 0;
-    jackpotRate = parseFloat(document.getElementById('setting-jackpot').value) || 0.5;
+    
+    let jpSetting = document.getElementById('setting-jackpot');
+    jackpotRate = jpSetting ? parseFloat(jpSetting.value) : 0.5;
     
     const c = parseInt(document.getElementById('player-count').value); 
     const sm = parseInt(document.getElementById('start-money').value) || 15000;
@@ -429,19 +445,19 @@ function updateUI() {
     dash.innerHTML = ''; 
     let isDebtActive = players.some(p => p.debtMode);
   
-    players.forEach(p => {
+    players.forEach((p, i) => {
         let iconHTML = ''; 
         if (p.skipTurns > 0) iconHTML += '⏸️'; 
         if (p.loan > 0) iconHTML += '💳';
         
-        let depHTML = p.deposit > 0 ? `<br><span style="font-size:11px; color:#f59e0b;">Банка: i₴${p.deposit}</span>` : '';
-        let cryptoHTML = (p.portfolio.PTC > 0 || p.portfolio.RTL > 0 || p.portfolio.TRN > 0 || p.portfolio.PST > 0 || p.portfolio.GOV > 0) ? `<br><span style="font-size:11px; color:#06b6d4;">Акції: 📈</span>` : '';
+        let depHTML = p.deposit > 0 ? `<br><span style="font-size:10px; color:#f59e0b;">Банка: i₴${p.deposit}</span>` : '';
+        let cryptoHTML = (p.portfolio.PTC > 0 || p.portfolio.RTL > 0 || p.portfolio.TRN > 0 || p.portfolio.PST > 0 || p.portfolio.GOV > 0) ? `<br><span style="font-size:10px; color:#06b6d4;">Акції: 📈</span>` : '';
         
         let activeClass = ''; 
         if (isDebtActive) { 
             if (p.debtMode) activeClass = 'debt-player-stat'; 
         } else { 
-            if (p.id === players[turn].id) activeClass = 'active-player-stat'; 
+            if (turn === i) activeClass = 'active-player-stat'; 
         }
         
         dash.innerHTML += `
@@ -450,7 +466,7 @@ function updateUI() {
                     <div class="color-dot" style="background:${p.color}"></div>
                     ${p.name} ${p.isBot ? '🤖' : ''} ${iconHTML}
                 </div>
-                <span style="color: ${p.money < 0 ? '#ef4444' : '#10b981'}; font-size:14px;">i₴${p.money}</span>
+                <span style="color: ${p.money < 0 ? '#ef4444' : '#10b981'}; font-size:13px;">i₴${p.money}</span>
                 ${depHTML} ${cryptoHTML}
             </div>`;
     });
@@ -459,25 +475,28 @@ function updateUI() {
         document.getElementById('current-turn').innerHTML = `Круг ${currentRound} | Хід: <span style="color:${players[turn].color}">${players[turn].name}</span>`; 
     }
     
-    document.getElementById('jackpot-display').innerText = `i₴${jackpotAmount}`;
+    let jpEl = document.getElementById('jackpot-display');
+    if(jpEl) jpEl.innerText = `i₴${jackpotAmount}`;
   
     let activeP = isDebtActive ? players.find(p=>p.debtMode) : players[turn];
     let btnLoan = document.getElementById('loan-btn');
-    if (activeP && activeP.loan > 0) { 
+    if (activeP && activeP.loan > 0 && btnLoan) { 
         btnLoan.innerText = `💳 Погасити (i₴2500, зал. ${activeP.loanTurns} х.)`; 
         btnLoan.className = 'btn-red'; 
-    } else { 
-        btnLoan.innerText = `💳 Взяти Кредит (i₴2000)`; 
+    } else if (btnLoan) { 
+        btnLoan.innerText = `💳 Кредит (i₴2000)`; 
         btnLoan.className = 'btn-purple'; 
     }
   
     let canAct = isMyTurn() && !isRolling;
-    document.getElementById('roll-btn').disabled = !canAct || (players[turn] && players[turn].isBot && !isOnlineMode);
-    document.getElementById('trade-btn').disabled = !canAct;
-    document.getElementById('deposit-btn').disabled = !canAct;
-    document.getElementById('crypto-btn').disabled = !canAct;
-    document.getElementById('inv-btn').disabled = !canAct;
-    document.getElementById('giveup-btn').disabled = !canAct;
+    
+    let btnRoll = document.getElementById('roll-btn');
+    if (btnRoll) btnRoll.disabled = !canAct || (players[turn] && players[turn].isBot && !isOnlineMode);
+    
+    ['trade-btn', 'deposit-btn', 'crypto-btn', 'inv-btn', 'giveup-btn'].forEach(id => {
+        let btn = document.getElementById(id);
+        if (btn) btn.disabled = !canAct;
+    });
   
     updatePropertyColors();
     checkBotTurn();
@@ -485,7 +504,8 @@ function updateUI() {
 
 function logMsgLocal(msg) { 
     const log = document.getElementById('log'); 
-    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">${msg}</div>` + log.innerHTML; 
+    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">• ${msg}</div>` + log.innerHTML; 
+    log.scrollTop = 0;
 }
 
 function logMsg(msg) { 
@@ -503,8 +523,12 @@ function checkBotTurn() {
         setTimeout(() => {
             if (document.getElementById('modal-overlay').style.display === 'none') {
                 botPreRollActions(p); 
-                if (!document.getElementById('roll-btn').disabled) {
+                let rollBtn = document.getElementById('roll-btn');
+                if (rollBtn && !rollBtn.disabled) {
                     userClickedRoll();
+                } else if (rollBtn && rollBtn.disabled) {
+                    // Форсуємо хід, якщо кнопка заблокувалася випадково
+                    startTurnLocal();
                 }
             }
         }, 1500);
@@ -806,7 +830,6 @@ function submitTrade() {
     if (mGive === 0 && mTake === 0 && pGive.length === 0 && pTake.length === 0) return alert("Угода порожня!");
     pendingTrade = { p1, p2, mGive, mTake, pGive, pTake };
 
-    // РОЗУМНИЙ БОТ ОЦІНЮЄ ТРЕЙД
     if (!isOnlineMode && p2.isBot) {
         let valGive = mGive, valTake = mTake;
         pGive.forEach(i => valGive += mapData[i].price); 
@@ -845,14 +868,10 @@ function acceptTrade() {
     
     t.pGive.forEach(i => { 
         properties[i].owner = t.p2.id; 
-        document.getElementById(`cell-${i}`).style.borderColor = t.p2.color; 
-        document.getElementById(`owner-${i}`).style.backgroundColor = t.p2.color; 
     }); 
     
     t.pTake.forEach(i => { 
         properties[i].owner = t.p1.id; 
-        document.getElementById(`cell-${i}`).style.borderColor = t.p1.color; 
-        document.getElementById(`owner-${i}`).style.backgroundColor = t.p1.color; 
     });
     
     logMsg(`🤝 Успішний обмін між <b>${t.p1.name}</b> та <b>${t.p2.name}</b>.`); 
@@ -871,8 +890,6 @@ function userClickedRoll() {
         startTurnLocal(); 
     } 
 }
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 async function startTurnLocal() {
     if (isRolling || processDebts()) return; 
@@ -1011,7 +1028,7 @@ async function movePlayer(steps) {
         await sleep(100);
     }
     
-    if (isMyTurn()) handleLanding(p.pos, p);
+    if (isMyTurn()) handleLanding(index=p.pos, p);
 }
 
 
@@ -1154,7 +1171,6 @@ function payRentConfirm(index, ownerId, rent) {
     playSound('sfx-spend');
     logMsg(`<b>${p.name}</b> сплатив i₴${rent} гравцю <b>${owner.name}</b>.`);
     
-    // Поповнення дивідендів
     if (['pink', 'green', 'orange'].includes(mapData[index].group)) { stocks.RTL.pool += Math.ceil(rent * 0.1); }
     if (['yellow'].includes(mapData[index].group)) { stocks.PST.pool += Math.ceil(rent * 0.1); }
     if (['station'].includes(mapData[index].group)) { stocks.TRN.pool += Math.ceil(rent * 0.1); }
@@ -1296,6 +1312,7 @@ function sellHouse(index) {
 
 function drawHouses(index, count) { 
     const hCont = document.getElementById(`houses-${index}`); 
+    if(!hCont) return;
     hCont.innerHTML = ''; 
     if (count < 5) { 
         for (let i = 0; i < count; i++) hCont.innerHTML += `<div class="house-icon"></div>`; 
@@ -1506,7 +1523,6 @@ function forceBankrupt() {
         if (properties[i].owner === p.id) { 
             delete properties[i]; 
             document.getElementById(`houses-${i}`).innerHTML = ''; 
-            document.getElementById(`cell-${i}`).classList.remove('mortgaged'); 
             document.getElementById(`cell-${i}`).style.borderColor = '#cbd5e1'; 
             document.getElementById(`owner-${i}`).style.backgroundColor = 'transparent'; 
         } 
@@ -1535,7 +1551,6 @@ function forceBankrupt() {
 function nextTurn() { 
     isRolling = false;
     
-    // Динаміка крипти (Bitcoin / PTC)
     if (Math.random() < 0.1) { 
         stocks.PTC.price = Math.floor(stocks.PTC.price * 0.3); 
         stocks.PTC.trend = 'down'; 
@@ -1549,7 +1564,6 @@ function nextTurn() {
     if (stocks.PTC.price < 50) stocks.PTC.price = 50; 
     if (stocks.PTC.price > 10000) stocks.PTC.price = 10000;
   
-    // Динаміка акцій
     ['RTL', 'TRN', 'PST'].forEach(sym => { 
         stocks[sym].noVisit++; 
         if (stocks[sym].noVisit > 4) { 
@@ -1558,7 +1572,6 @@ function nextTurn() {
         } 
     });
     
-    // Виплата дивідендів
     distributeDividends('RTL'); 
     distributeDividends('TRN'); 
     distributeDividends('PST'); 
