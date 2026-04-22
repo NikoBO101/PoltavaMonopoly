@@ -1827,24 +1827,32 @@ function openAuctionModal() {
 }
 // === ПРОФІЛЬ ТА ЛОГІН (Локальна версія) ===
 function updateProfileUI() {
-    let authSection = document.getElementById('auth-section');
-    let profileSection = document.getElementById('profile-section');
+    let authForm = document.getElementById('auth-form');
+    let profileInfo = document.getElementById('profile-info');
     
     if (currentUser) {
-        authSection.style.display = 'none';
-        profileSection.style.display = 'block';
+        // Ховаємо форму входу, показуємо профіль
+        if (authForm) authForm.style.display = 'none';
+        if (profileInfo) profileInfo.style.display = 'block';
         
-        // Тут ми міняємо коїни на Галушки!
-        document.getElementById('profile-info').innerHTML = `
-            <strong>Гравець:</strong> ${currentUser.nick} <br>
-            <strong>Титул:</strong> ${currentUser.activeTitle} <br>
-            <strong>Перемоги:</strong> ${currentUser.wins} <br>
-            <strong>Баланс:</strong> ${currentUser.galushky || 100} 🥟 Галушок <br>
-            <strong>Фішка:</strong> ${currentUser.equippedToken === 'token_default' ? 'Стандартна' : 'Ексклюзивна'}
-        `;
+        // Оновлюємо дані акуратно, не ламаючи твій дизайн
+        let nameEl = document.getElementById('user-display-name');
+        if (nameEl) nameEl.innerText = currentUser.nick;
+        
+        let winsEl = document.getElementById('user-wins');
+        if (winsEl) winsEl.innerText = currentUser.wins || 0;
+        
+        let titleEl = document.getElementById('user-active-title');
+        if (titleEl) titleEl.innerText = currentUser.activeTitle || "Новачок";
+        
+        // Виводимо Галушки!
+        let coinsEl = document.getElementById('user-coins');
+        if (coinsEl) coinsEl.innerText = (currentUser.galushky !== undefined ? currentUser.galushky : (currentUser.coins || 0)) + " 🥟";
+        
     } else {
-        authSection.style.display = 'block';
-        profileSection.style.display = 'none';
+        // Якщо не авторизований - показуємо форму
+        if (authForm) authForm.style.display = 'block';
+        if (profileInfo) profileInfo.style.display = 'none';
     }
 }
 
