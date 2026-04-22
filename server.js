@@ -2,10 +2,28 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const { MongoClient } = require('mongodb'); 
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+
+// === ПІДКЛЮЧЕННЯ БАЗИ ДАНИХ (MongoDB) ===
+// УВАГА: ЗАМІНИ <NikAndLos> та <yyzqYXzRGEqTCyP7> НА СВОЇ!
+const uri = "mongodb+srv://<NikAndLos>:<yyzqYXzRGEqTCyP7>@cluster0.dh8g9kr.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const client = new MongoClient(uri);
+let usersCollection;
+
+async function connectDB() {
+    try {
+        await client.connect();
+        usersCollection = client.db("poltava_db").collection("users");
+        console.log("✅ Підключено до хмарної бази MongoDB!");
+    } catch (e) {
+        console.error("❌ Помилка підключення до MongoDB:", e);
+    }
+}
+connectDB();
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -16,10 +34,43 @@ io.on('connection', (socket) => {
     connectedPlayers++;
     io.emit('globalOnlineCount', connectedPlayers);
     
-    // Відправляємо список кімнат при підключенні
     socket.emit('updateRoomsList', getPublicRooms());
 
-    // Створення кімнати
+    // === АВТОРИЗАЦІЯ ТА РЕЄСТРАЦІЯ ===
+    socket.on('login', async (data, callback) => {
+        if (!usersCollection) {
+            return callback({ success: false, msg: "База даних ще завантажується, зачекайте..." });
+        }
+
+        const { nick, pin } = data;
+        try {
+            let user = await usersCollection.findOne({ nick: nick });
+
+            if (user) {
+                if (user.pin === pin) {
+                    callback({ success: true, user: user, msg: `З поверненням, ${nick}!` });
+                } else {
+                    callback({ success: false, msg: "❌ Невірний PIN-код для цього нікнейму!" });
+                }
+            } else {
+                const newUser = { 
+                    nick: nick, 
+                    pin: pin, 
+                    wins: 0, 
+                    activeTitle: "Новачок", 
+                    coins: 100, 
+                    titles: ["Новачок"],
+                    createdAt: new Date()
+                };
+                await usersCollection.insertOne(newUser);
+                callback({ success: true, user: newUser, msg: "✅ Акаунт створено! Тобі нараховано 100 коїнів." });
+            }
+        } catch (err) {
+            console.error("Помилка БД:", err);
+            callback({ success: false, msg: "Помилка сервера бази даних." });
+        }
+    });
+
     socket.on('createRoom', (data) => {
         const roomId = Math.random().toString(36).substring(2, 7).toUpperCase();
         rooms[roomId] = {
@@ -28,14 +79,13 @@ io.on('connection', (socket) => {
             password: data.password || '',
             players: [{ id: socket.id, name: data.playerName, isHost: true }],
             status: 'waiting',
-            gameState: null // Тут зберігатиметься копія стану гри
+            gameState: null
         };
         socket.join(roomId);
         socket.emit('roomJoined', rooms[roomId]);
         io.emit('updateRoomsList', getPublicRooms());
     });
 
-    // Приєднання до кімнати
     socket.on('joinRoom', (data) => {
         const room = rooms[data.roomId];
         if (!room) return socket.emit('joinError', 'Кімнату не знайдено!');
@@ -50,7 +100,6 @@ io.on('connection', (socket) => {
         io.emit('updateRoomsList', getPublicRooms());
     });
 
-    // Запуск гри
     socket.on('startGame', (roomId) => {
         const room = rooms[roomId];
         if (room && room.players[0].id === socket.id) {
@@ -64,29 +113,23 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Кидок кубиків (Серверний рандом)
     socket.on('rollDice', (roomId) => {
         const room = rooms[roomId];
         if (room && room.status === 'playing') {
             const v1 = Math.floor(Math.random() * 6) + 1;
             const v2 = Math.floor(Math.random() * 6) + 1;
-            // Передаємо результат усім
             io.to(roomId).emit('diceRolled', { v1, v2 });
         }
     });
 
-    // СИНХРОНІЗАЦІЯ ДІЇ (Важливо: передаємо playerId)
     socket.on('playerAction', (roomId, data) => {
         const room = rooms[roomId];
         if (room) {
-            // Додаємо до даних ID того, хто це зробив, щоб інші браузери не помилились
             data.senderId = socket.id;
-            // Транслюємо дію всім іншим в кімнаті
             io.to(roomId).emit('syncAction', data);
         }
     });
 
-    // Глобальна синхронізація стану (якщо хтось відстав)
     socket.on('syncGameState', (roomId, state) => {
         const room = rooms[roomId];
         if (room) {
