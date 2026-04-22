@@ -1825,34 +1825,61 @@ function openAuctionModal() {
          ${finishBtn}`
     );
 }
-// === ПРОФІЛЬ ТА ЛОГІН (Локальна версія) ===
+// === ПРОФІЛЬ, ЛОГІН ТА МАГАЗИН ===
+
 function updateProfileUI() {
     let authForm = document.getElementById('auth-form');
     let profileInfo = document.getElementById('profile-info');
-    
+    let shopWarning = document.getElementById('shop-auth-warning');
+    let shopContainer = document.getElementById('shop-container');
+    let gameHeader = document.getElementById('game-header'); // Нова шапка
+
     if (currentUser) {
-        // Ховаємо форму входу, показуємо профіль
         if (authForm) authForm.style.display = 'none';
         if (profileInfo) profileInfo.style.display = 'block';
-        
-        // Оновлюємо дані акуратно, не ламаючи твій дизайн
-        let nameEl = document.getElementById('user-display-name');
-        if (nameEl) nameEl.innerText = currentUser.nick;
-        
-        let winsEl = document.getElementById('user-wins');
-        if (winsEl) winsEl.innerText = currentUser.wins || 0;
-        
-        let titleEl = document.getElementById('user-active-title');
-        if (titleEl) titleEl.innerText = currentUser.activeTitle || "Новачок";
-        
-        // Виводимо Галушки!
-        let coinsEl = document.getElementById('user-coins');
-        if (coinsEl) coinsEl.innerText = (currentUser.galushky !== undefined ? currentUser.galushky : (currentUser.coins || 0)) + " 🥟";
-        
+        if (shopWarning) shopWarning.style.display = 'none';
+        if (shopContainer) shopContainer.style.display = 'block';
+        if (gameHeader) gameHeader.style.display = 'flex'; // Показуємо шапку!
+
+        // 1. Оновлюємо Шапку (Header) зверху екрана
+        if (document.getElementById('header-galushky')) document.getElementById('header-galushky').innerText = currentUser.galushky || 0;
+        if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = currentUser.nick;
+
+        // 2. Оновлюємо текст у самому Профілі
+        if (document.getElementById('user-display-name')) document.getElementById('user-display-name').innerText = currentUser.nick;
+        if (document.getElementById('user-wins')) document.getElementById('user-wins').innerText = currentUser.wins || 0;
+        if (document.getElementById('user-active-title')) document.getElementById('user-active-title').innerText = currentUser.activeTitle || "Новачок";
+        if (document.getElementById('user-coins')) document.getElementById('user-coins').innerText = (currentUser.galushky || 0) + " 🥟";
+
+        // 3. Оновлюємо Крамницю
+        if (document.getElementById('shop-balance')) document.getElementById('shop-balance').innerText = (currentUser.galushky || 0) + ' 🥟';
+
+        // Кнопки "Вдягнути/Купити" для фішок
+        let items = ['token_gold', 'token_bogdan', 'token_tank'];
+        items.forEach(item => {
+            let btnEquip = document.getElementById('equip-' + item);
+            if(btnEquip) {
+                if (currentUser.inventory && currentUser.inventory.includes(item)) {
+                    btnEquip.style.display = 'block'; 
+                    if (currentUser.equippedToken === item) {
+                        btnEquip.innerText = '✅ Вдягнено';
+                        btnEquip.className = 'btn-gold'; 
+                    } else {
+                        btnEquip.innerText = 'Вдягнути';
+                        btnEquip.className = 'btn-green';
+                    }
+                } else {
+                    btnEquip.style.display = 'none';
+                }
+            }
+        });
+
     } else {
-        // Якщо не авторизований - показуємо форму
         if (authForm) authForm.style.display = 'block';
         if (profileInfo) profileInfo.style.display = 'none';
+        if (shopWarning) shopWarning.style.display = 'block';
+        if (shopContainer) shopContainer.style.display = 'none';
+        if (gameHeader) gameHeader.style.display = 'none';
     }
 }
 
@@ -1862,25 +1889,15 @@ function loginAction() {
     
     if (!nick || nick.length < 3) return alert("Нікнейм має бути мінімум 3 символи!");
     if (!pin || pin.length !== 4 || isNaN(pin)) return alert("PIN-код має складатися з 4 цифр!");
-    
-    // Перевірка, чи працює сокет (зв'язок із сервером)
-    if (!socket || !socket.connected) {
-        return alert("Помилка: Немає зв'язку з сервером. Зачекайте або оновіть сторінку.");
-    }
+    if (!socket || !socket.connected) return alert("Помилка: Немає зв'язку з сервером.");
 
-    // ВІДПРАВЛЯЄМО ЗАПИТ НА СЕРВЕР (замість локального збереження)
     socket.emit('login', { nick: nick, pin: pin }, (response) => {
         if (response && response.success) {
-            // Якщо сервер сказав "ОК", записуємо отриманого юзера в глобальну змінну
             currentUser = response.user;
-            
-            // Зберігаємо ЛОГІН/ПІН локально ТІЛЬКИ для того, щоб наступного разу не вводити
             localStorage.setItem('poltavaUser', JSON.stringify({ nick: nick, pin: pin }));
-            
             updateProfileUI();
             alert(response.msg);
         } else {
-            // Якщо сервер повернув помилку (наприклад, невірний пін)
             alert(response.msg || "Помилка авторизації");
         }
     });
@@ -1891,56 +1908,9 @@ function logoutAction() {
         currentUser = null;
         localStorage.removeItem('poltavaUser');
         updateProfileUI();
-        // Можна додати перезавантаження сторінки, щоб все скинулось
-        location.reload();
+        location.reload(); // Перезавантажуємо сторінку для надійності
     }
 }
-// ==========================================
-// === ЛОГІКА КРАМНИЦІ (ГАЛУШКИ ТА ФІШКИ) ===
-// ==========================================
-
-function updateShopUI() {
-    let warning = document.getElementById('shop-auth-warning');
-    let container = document.getElementById('shop-container');
-    
-    if (currentUser) {
-        if(warning) warning.style.display = 'none';
-        if(container) container.style.display = 'block';
-        
-        let balanceEl = document.getElementById('shop-balance');
-        if(balanceEl) balanceEl.innerText = (currentUser.galushky || 0) + ' 🥟';
-        
-        // Показуємо кнопку "Вдягнути", якщо товар уже куплено
-        let items = ['token_gold', 'token_bogdan', 'token_tank'];
-        items.forEach(item => {
-            let btnEquip = document.getElementById('equip-' + item);
-            if(btnEquip) {
-                if (currentUser.inventory && currentUser.inventory.includes(item)) {
-                    btnEquip.style.display = 'block'; 
-                    if (currentUser.equippedToken === item) {
-                        btnEquip.innerText = '✅ Вдягнено';
-                        btnEquip.className = 'btn-gold'; // Золотий колір для вдягненого
-                    } else {
-                        btnEquip.innerText = 'Вдягнути';
-                        btnEquip.className = 'btn-green';
-                    }
-                } else {
-                    btnEquip.style.display = 'none';
-                }
-            }
-        });
-    } else {
-        if(warning) warning.style.display = 'block';
-        if(container) container.style.display = 'none';
-    }
-}
-
-// Перехоплюємо оновлення профілю, щоб магазин теж оновлювався
-const originalUpdateProfileUI = updateProfileUI;
-updateProfileUI = function() {
-    if(typeof originalUpdateProfileUI === 'function') originalUpdateProfileUI();
-    updateShopUI();
-};
 
 function buyItemAction(itemId) {
     if (!currentUser) return alert("Спершу увійди в Профіль!");
