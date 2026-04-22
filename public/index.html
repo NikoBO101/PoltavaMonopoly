@@ -184,7 +184,129 @@
                 <button class="btn-red" onclick="logoutAction()" style="margin-top:20px; padding:10px;">Вийти з акаунту</button>
             </div>
         </div>
+<div id="tab-shop" class="tab-content">
+            <h2 style="color:#ef4444; text-align:center; margin-top:0;">🛒 КРАМНИЦЯ</h2>
+            <div id="shop-auth-warning" style="text-align:center; color:#f59e0b; margin-bottom:15px;">
+                Щоб купувати предмети, потрібно увійти в Профіль!
+            </div>
+            
+            <div id="shop-container" style="display:none;">
+                <div style="background:rgba(0,0,0,0.5); padding:10px; border-radius:10px; margin-bottom:15px; text-align:center; border: 1px solid #10b981;">
+                    <span style="font-size:18px; color:#cbd5e1;">Твій баланс:</span> 
+                    <b id="shop-balance" style="font-size:24px; color:#10b981;">0 🥟</b>
+                </div>
+                
+                <div class="shop-items-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div style="background:#1e293b; padding:10px; border-radius:10px; text-align:center; border:1px solid #f59e0b;">
+                        <div style="font-size:30px; margin-bottom:5px;">🟡</div>
+                        <h4 style="margin:0; color:#f59e0b;">Золота Галушка</h4>
+                        <p style="font-size:12px; color:#94a3b8; margin:5px 0;">Ексклюзивна фішка</p>
+                        <button class="btn-gold" onclick="buyItemAction('token_gold')" style="width:100%; padding:8px; font-size:14px;">500 🥟 Купити</button>
+                        <button class="btn-green" id="equip-token_gold" onclick="equipItemAction('token_gold')" style="display:none; width:100%; padding:8px; font-size:14px; margin-top:5px;">Вдягнути</button>
+                    </div>
+                    
+                    <div style="background:#1e293b; padding:10px; border-radius:10px; text-align:center; border:1px solid #3b82f6;">
+                        <div style="font-size:30px; margin-bottom:5px;">🚐</div>
+                        <h4 style="margin:0; color:#3b82f6;">Жовтий Богдан</h4>
+                        <p style="font-size:12px; color:#94a3b8; margin:5px 0;">Легенда Полтави</p>
+                        <button class="btn-blue" onclick="buyItemAction('token_bogdan')" style="width:100%; padding:8px; font-size:14px;">300 🥟 Купити</button>
+                        <button class="btn-green" id="equip-token_bogdan" onclick="equipItemAction('token_bogdan')" style="display:none; width:100%; padding:8px; font-size:14px; margin-top:5px;">Вдягнути</button>
+                    </div>
 
+                    <div style="background:#1e293b; padding:10px; border-radius:10px; text-align:center; border:1px solid #10b981; grid-column: span 2;">
+                        <div style="font-size:30px; margin-bottom:5px;">🚜</div>
+                        <h4 style="margin:0; color:#10b981;">Танк</h4>
+                        <p style="font-size:12px; color:#94a3b8; margin:5px 0;">Суворий бізнес</p>
+                        <button class="btn-green" onclick="buyItemAction('token_tank')" style="width:100%; padding:8px; font-size:14px;">1000 🥟 Купити</button>
+                        <button class="btn-blue" id="equip-token_tank" onclick="equipItemAction('token_tank')" style="display:none; width:100%; padding:8px; font-size:14px; margin-top:5px;">Вдягнути</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        ```
+
+---
+
+### ⚙️ КРОК 3: Вчимо кнопки працювати (`game.js`)
+
+Тепер відкрий файл `public/js/game.js`. Прокрути в **самісінький низ** (в кінець файлу) і просто встав цей блок коду:
+
+```javascript
+// ==========================================
+// === ЛОГІКА КРАМНИЦІ (ГАЛУШКИ ТА ФІШКИ) ===
+// ==========================================
+
+function updateShopUI() {
+    let warning = document.getElementById('shop-auth-warning');
+    let container = document.getElementById('shop-container');
+    
+    if (currentUser) {
+        if(warning) warning.style.display = 'none';
+        if(container) container.style.display = 'block';
+        
+        let balanceEl = document.getElementById('shop-balance');
+        if(balanceEl) balanceEl.innerText = (currentUser.galushky || 0) + ' 🥟';
+        
+        // Показуємо кнопку "Вдягнути", якщо товар уже куплено
+        let items = ['token_gold', 'token_bogdan', 'token_tank'];
+        items.forEach(item => {
+            let btnEquip = document.getElementById('equip-' + item);
+            if(btnEquip) {
+                if (currentUser.inventory && currentUser.inventory.includes(item)) {
+                    btnEquip.style.display = 'block'; 
+                    if (currentUser.equippedToken === item) {
+                        btnEquip.innerText = '✅ Вдягнено';
+                        btnEquip.className = 'btn-gold'; // Золотий колір для вдягненого
+                    } else {
+                        btnEquip.innerText = 'Вдягнути';
+                        btnEquip.className = 'btn-green';
+                    }
+                } else {
+                    btnEquip.style.display = 'none';
+                }
+            }
+        });
+    } else {
+        if(warning) warning.style.display = 'block';
+        if(container) container.style.display = 'none';
+    }
+}
+
+// Перехоплюємо оновлення профілю, щоб магазин теж оновлювався
+const originalUpdateProfileUI = updateProfileUI;
+updateProfileUI = function() {
+    if(typeof originalUpdateProfileUI === 'function') originalUpdateProfileUI();
+    updateShopUI();
+};
+
+function buyItemAction(itemId) {
+    if (!currentUser) return alert("Спершу увійди в Профіль!");
+    if (!socket || !socket.connected) return alert("Немає зв'язку з сервером!");
+    
+    if (confirm("Точно хочеш купити цей предмет за Галушки?")) {
+        socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+            if (res.success) {
+                currentUser = res.user;
+                updateProfileUI(); 
+                alert("🎉 " + res.msg);
+            } else {
+                alert("❌ " + res.msg);
+            }
+        });
+    }
+}
+
+function equipItemAction(itemId) {
+    if (!socket || !socket.connected) return;
+    socket.emit('equipToken', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+        if (res.success) {
+            currentUser = res.user;
+            updateProfileUI();
+        } else {
+            alert("❌ " + res.msg);
+        }
+    });
+}
         <div id="lobby-screen" style="display:none; text-align:center; padding: 20px;">
         <div id="lobby-screen" style="display:none; text-align:center; background: rgba(15,23,42,0.9); padding: 20px; border-radius: 15px; border: 2px solid #3b82f6;">
             <h2 style="color:#3b82f6;">КІМНАТА ОЧІКУВАННЯ</h2>
