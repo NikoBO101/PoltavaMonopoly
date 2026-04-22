@@ -26,11 +26,6 @@ var myMultiplayerId = null;
 var currentLobby = null; 
 var pendingTrade = null;
 
-var dotL = { 
-    1:[0,0,0,0,1,0,0,0,0], 2:[1,0,0,0,0,0,0,0,1], 3:[1,0,0,0,1,0,0,0,1], 
-    4:[1,0,1,0,0,0,1,0,1], 5:[1,0,1,0,1,0,1,0,1], 6:[1,0,1,1,0,1,1,0,1] 
-};
-var playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
