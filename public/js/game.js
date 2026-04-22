@@ -31,25 +31,57 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 
 // === ФЕЙКОВИЙ ОНЛАЙН ТА КІМНАТИ ===
+let lastRealRooms = [];
 let fakeBaseOnline = 18;
-setInterval(() => {
-    if (!currentLobby && !isOnlineMode) {
-        let fluct = Math.floor(Math.random() * 5) - 2; 
-        fakeBaseOnline += fluct;
-        if (fakeBaseOnline < 12) fakeBaseOnline = 12;
-        if (fakeBaseOnline > 35) fakeBaseOnline = 35;
-        let badge = document.getElementById('online-badge');
-        if (badge) badge.innerText = `🟢 Онлайн: ${fakeBaseOnline}`;
-    }
-}, 8000);
 
-const fakeRooms = [
-    { id: 'V1P9', name: 'Полтава VIP', hasPassword: true, playersCount: 3, status: 'waiting', isFake: true },
-    { id: 'G4ME', name: 'На мільйон', hasPassword: false, playersCount: 4, status: 'playing', isFake: true },
-    { id: 'N00B', name: 'Тільки новачки', hasPassword: false, playersCount: 2, status: 'waiting', isFake: true },
-    { id: 'PROX', name: 'Турнір', hasPassword: false, playersCount: 6, status: 'playing', isFake: true }
+// Список кумедних та типових назв, які створюють "люди"
+const fakeRoomNames = ["го на всі бабки", "Без нубів", "Полтава центр", "граю з жінкою", "абракадабра", "Тільки свої", "Заходь не бійся", "123123", "Пиво і кубики", "test", "хто зі мною", "Ворскла чемпіон"];
+
+let fakeRooms = [
+    { id: 'F1X9', name: 'Полтава VIP', hasPassword: true, playersCount: 3, status: 'waiting', isFake: true },
+    { id: 'F2M4', name: 'го на мільйон', hasPassword: false, playersCount: 4, status: 'playing', isFake: true },
+    { id: 'F3B7', name: 'Тільки новачки', hasPassword: false, playersCount: 2, status: 'waiting', isFake: true },
+    { id: 'F4K0', name: 'Турнір', hasPassword: false, playersCount: 6, status: 'playing', isFake: true }
 ];
 
+setInterval(() => {
+    if (currentLobby || isOnlineMode) return; // Не міняємо нічого, якщо ти вже граєш
+    
+    // 1. Стрибає загальний онлайн
+    let fluct = Math.floor(Math.random() * 5) - 2; 
+    fakeBaseOnline += fluct;
+    if (fakeBaseOnline < 12) fakeBaseOnline = 12;
+    if (fakeBaseOnline > 45) fakeBaseOnline = 45;
+    let badge = document.getElementById('online-badge');
+    if (badge) badge.innerText = `🟢 Онлайн: ${fakeBaseOnline}`;
+
+    // 2. Випадкова кімната починає жити своїм життям
+    let roomToChange = fakeRooms[Math.floor(Math.random() * fakeRooms.length)];
+    
+    if (roomToChange.status === 'playing') {
+        // Якщо гра йшла, вона може закінчитися, і хтось створює нову кімнату з дурною назвою
+        if (Math.random() > 0.7) { 
+            roomToChange.status = 'waiting';
+            roomToChange.playersCount = 1;
+            roomToChange.name = fakeRoomNames[Math.floor(Math.random() * fakeRoomNames.length)];
+            roomToChange.hasPassword = Math.random() > 0.8; // Іноді ставлять пароль
+        }
+    } else { 
+        // Якщо кімната в очікуванні, люди заходять або виходять
+        let change = Math.random() > 0.4 ? 1 : -1; // Частіше заходять, ніж виходять
+        roomToChange.playersCount += change;
+        
+        if (roomToChange.playersCount <= 0) roomToChange.playersCount = 1;
+        
+        // Якщо набралося достатньо людей — гра запускається і кімната закривається
+        if (roomToChange.playersCount >= 6 || (roomToChange.playersCount >= 3 && Math.random() > 0.5)) {
+            roomToChange.status = 'playing';
+        }
+    }
+
+    // Перемальовуємо список кімнат на екрані
+    renderRoomsList(lastRealRooms);
+}, 3000); // Кожні 3 секунди щось відбувається!
 
 // === МЕРЕЖЕВА ЛОГІКА (SOCKET.IO) ===
 if (socket) {
