@@ -26,15 +26,8 @@ let myMultiplayerId = null;
 let currentLobby = null; 
 let pendingTrade = null;
 
-const dotL = { 
-    1:[0,0,0,0,1,0,0,0,0], 
-    2:[1,0,0,0,0,0,0,0,1], 
-    3:[1,0,0,0,1,0,0,0,1], 
-    4:[1,0,1,0,0,0,1,0,1], 
-    5:[1,0,1,0,1,0,1,0,1], 
-    6:[1,0,1,1,0,1,1,0,1] 
-};
-const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
+// Заглушка таймера, щоб не було помилок
+function stopTimer() {}
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -481,10 +474,10 @@ function updateUI() {
     let activeP = isDebtActive ? players.find(p=>p.debtMode) : players[turn];
     let btnLoan = document.getElementById('loan-btn');
     if (activeP && activeP.loan > 0 && btnLoan) { 
-        btnLoan.innerText = `💳 Погасити (i₴2500, зал. ${activeP.loanTurns} х.)`; 
+        btnLoan.innerText = `💳 Погасити (i₴2500)`; 
         btnLoan.className = 'btn-red'; 
     } else if (btnLoan) { 
-        btnLoan.innerText = `💳 Кредит (i₴2000)`; 
+        btnLoan.innerText = `💳 Кредит`; 
         btnLoan.className = 'btn-purple'; 
     }
   
@@ -527,7 +520,6 @@ function checkBotTurn() {
                 if (rollBtn && !rollBtn.disabled) {
                     userClickedRoll();
                 } else if (rollBtn && rollBtn.disabled) {
-                    // Форсуємо хід, якщо кнопка заблокувалася випадково
                     startTurnLocal();
                 }
             }
@@ -868,10 +860,14 @@ function acceptTrade() {
     
     t.pGive.forEach(i => { 
         properties[i].owner = t.p2.id; 
+        document.getElementById(`cell-${i}`).style.borderColor = t.p2.color; 
+        document.getElementById(`owner-${i}`).style.backgroundColor = t.p2.color; 
     }); 
     
     t.pTake.forEach(i => { 
         properties[i].owner = t.p1.id; 
+        document.getElementById(`cell-${i}`).style.borderColor = t.p1.color; 
+        document.getElementById(`owner-${i}`).style.backgroundColor = t.p1.color; 
     });
     
     logMsg(`🤝 Успішний обмін між <b>${t.p1.name}</b> та <b>${t.p2.name}</b>.`); 
@@ -1028,7 +1024,7 @@ async function movePlayer(steps) {
         await sleep(100);
     }
     
-    if (isMyTurn()) handleLanding(index=p.pos, p);
+    if (isMyTurn()) handleLanding(p.pos, p);
 }
 
 
@@ -1522,7 +1518,8 @@ function forceBankrupt() {
     for (let i in properties) { 
         if (properties[i].owner === p.id) { 
             delete properties[i]; 
-            document.getElementById(`houses-${i}`).innerHTML = ''; 
+            let houseCont = document.getElementById(`houses-${i}`);
+            if(houseCont) houseCont.innerHTML = ''; 
             document.getElementById(`cell-${i}`).style.borderColor = '#cbd5e1'; 
             document.getElementById(`owner-${i}`).style.backgroundColor = 'transparent'; 
         } 
