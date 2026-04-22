@@ -11,7 +11,7 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <audio id="bgm" loop preload="auto"></audio>
-    <audio id="sfx-dice" src="https://actions.google.com/sounds/v1/office/abacus_handle_shake.ogg" preload="auto"></audio>
+    <audio id="sfx-dice" src="https://actions.google.com/sounds/v1/foley/rolling_dice_on_wood.ogg" preload="auto"></audio>
     <audio id="sfx-step" src="https://actions.google.com/sounds/v1/foley/wood_block_drop.ogg" preload="auto"></audio>
     <audio id="sfx-earn" src="https://actions.google.com/sounds/v1/foley/cash_register.ogg" preload="auto"></audio>
     <audio id="sfx-spend" src="https://actions.google.com/sounds/v1/cartoon/slide_whistle_down.ogg" preload="auto"></audio>
@@ -25,56 +25,122 @@
         
         <div class="menu-tabs">
             <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
-            <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн Гра</button>
+            <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн</button>
+            <button class="tab-btn" onclick="switchTab('tab-rules')" style="color:#10b981;">📜 Правила</button>
             <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
-            <button class="tab-btn" onclick="switchTab('tab-dev')">👑 Про розробника</button>
+            <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b;">👑 Розробник</button>
         </div>
 
         <div id="tab-newgame" class="tab-content active">
             <div class="setup-row">
                 <label>Гравців:</label>
                 <select id="player-count" onchange="generatePlayerInputs()">
-                    <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4" selected>4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
                 </select>
             </div>
-            <div class="setup-row"><label>Старт (i₴):</label><input type="number" id="start-money" value="15000" step="1000"></div>
+            <div class="setup-row">
+                <label>Старт (i₴):</label>
+                <input type="number" id="start-money" value="15000" step="1000">
+            </div>
+            
             <div class="player-inputs" id="player-names-container"></div>
+            
             <button class="start-btn" onclick="startLocalGame()">🎮 ПОЧАТИ ГРУ</button>
         </div>
 
         <div id="tab-multiplayer" class="tab-content">
-            <div class="setup-row"><label>Ваше Ім'я:</label><input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець"></div>
+            <div class="setup-row">
+                <label>Ваше Ім'я:</label>
+                <input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець">
+            </div>
+            
             <div class="mp-section">
-                <h4>Створити Кімнату</h4>
-                <div class="setup-row"><input type="text" id="mp-room-name" placeholder="Назва кімнати"><input type="text" id="mp-room-pass" placeholder="Пароль (необ.)"></div>
+                <h4 style="margin-top:0;">Створити Кімнату</h4>
+                <div class="setup-row">
+                    <input type="text" id="mp-room-name" placeholder="Назва кімнати">
+                    <input type="text" id="mp-room-pass" placeholder="Пароль (необ.)">
+                </div>
                 <button class="btn-green" onclick="createRoom()">Створити та Зайти</button>
             </div>
+            
             <div class="mp-section">
                 <h4>Доступні Кімнати</h4>
                 <div class="room-list" id="mp-room-list"></div>
-                <div class="setup-row" style="margin-top:10px;"><input type="text" id="mp-join-code" placeholder="Код кімнати"><input type="text" id="mp-join-pass" placeholder="Пароль"></div>
+                <div class="setup-row" style="margin-top:10px;">
+                    <input type="text" id="mp-join-code" placeholder="Код кімнати">
+                    <input type="text" id="mp-join-pass" placeholder="Пароль">
+                </div>
                 <button class="btn-blue" onclick="joinRoomByCode()">Приєднатися</button>
             </div>
         </div>
 
-        <div id="tab-settings" class="tab-content">
-            <div class="setup-row"><label>📻 Радіо:</label>
-                <select id="setting-radio" onchange="changeRadio()"><option value="" selected>Вимкнено</option><option value="https://online.hitfm.ua/HitFM">Хіт FM</option><option value="https://online.kissfm.ua/KissFM">Kiss FM</option></select>
+        <div id="tab-rules" class="tab-content text-left">
+            <h2 style="color:#10b981; text-align:center; margin-top:0;">📜 ПРАВИЛА ГРИ</h2>
+            <div style="height: 300px; overflow-y: auto; padding-right: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                <p><b>🎯 Мета гри:</b> Стати найбагатшим магнатом Полтави та збанкрутувати всіх конкурентів.</p>
+                <p><b>🏙️ Нерухомість:</b> Купуйте вільні ділянки. Якщо інший гравець стає на вашу ділянку, він платить вам оренду.</p>
+                <p><b>👑 Монополія та Будівництво:</b> Зберіть усі ділянки одного кольору, щоб створити Монополію. Тоді базова оренда подвоюється, і ви отримуєте право будувати будинки (максимум 5 — це Готель). Будувати треба рівномірно!</p>
+                <p><b>📈 Фондова Біржа:</b> 
+                    <br>• <b>PTC (Крипта):</b> Курс стрибає випадково щоходу. Можна швидко заробити або втратити все.
+                    <br>• <b>RTL, TRN, PST:</b> Акції отримують % з орендних платежів гравців. Якщо набігає великий пул, виплачуються солідні дивіденди!
+                </p>
+                <p><b>🏦 Банка (Депозит):</b> Покладіть гроші на депозит. Щоразу, коли ви проходите СТАРТ, ваш вклад збільшується на 5%.</p>
+                <p><b>💳 Кредит:</b> Завжди можна взяти позику в банку на i₴2000. Але пам'ятайте: через 5 ходів банк автоматично спише i₴2500 з вашого рахунку!</p>
+                <p><b>🤝 Трейди:</b> Не вистачає ділянки для монополії? Відкривайте меню Трейдів, пропонуйте обмін ділянками та грошима з іншими гравцями.</p>
             </div>
-            <div class="setup-row"><label>🎵 Музика:</label><input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()"><span id="vol-bgm-val">20%</span></div>
-            <div class="setup-row"><label>🔊 Звуки:</label><input type="range" id="vol-sfx" min="0" max="100" value="50" onchange="updateVolume()"><span id="vol-sfx-val">50%</span></div>
+        </div>
+
+        <div id="tab-settings" class="tab-content">
+            <div class="setup-row">
+                <label>📻 Радіо:</label>
+                <select id="setting-radio" onchange="changeRadio()">
+                    <option value="" selected>Вимкнено</option>
+                    <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
+                    <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
+                </select>
+            </div>
+            <div class="setup-row">
+                <label>🎵 Музика:</label>
+                <input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()">
+                <span id="vol-bgm-val">20%</span>
+            </div>
+            <div class="setup-row">
+                <label>🔊 Звуки:</label>
+                <input type="range" id="vol-sfx" min="0" max="100" value="50" onchange="updateVolume()">
+                <span id="vol-sfx-val">50%</span>
+            </div>
             <hr style="border-color:#334155; margin:15px 0;">
-            <div class="setup-row"><label>Джекпот:</label>
-                <select id="setting-jackpot"><option value="1">100% (Всі штрафи)</option><option value="0.5" selected>50% (Половина)</option><option value="0">Вимкнено</option></select>
+            <div class="setup-row">
+                <label>Джекпот Парковки:</label>
+                <select id="setting-jackpot">
+                    <option value="1">100% (Всі штрафи)</option>
+                    <option value="0.5" selected>50% (Половина)</option>
+                    <option value="0">Вимкнено</option>
+                </select>
             </div>
         </div>
 
         <div id="tab-dev" class="tab-content dev-container">
-            <h2 style="color:#10b981; margin-top:0;">Про Розробника</h2>
-            <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Dev" style="width:80px; margin-bottom:15px; filter: drop-shadow(0 0 10px #10b981);">
-            <p style="font-size:16px;">Гру <b>"Економіка Полтави"</b> створено спеціально для веселих вечорів з друзями.</p>
-            <p><b>Автор:</b> Микола (Kolya)</p>
-            <p><b>Місто:</b> Полтава 🇺🇦</p>
+            <div class="royal-dev-card">
+                <h2 style="color:#f59e0b; font-weight:900; letter-spacing:2px; text-shadow: 0 0 15px rgba(245,158,11,0.8); margin: 0 0 15px 0;">👑 ПРО РОЗРОБНИКА 👑</h2>
+                
+                <img src="https://cdn-icons-png.flaticon.com/512/2111/2111463.png" alt="Dev" style="width:110px; filter: drop-shadow(0 0 20px #f59e0b); margin-bottom: 10px;">
+                
+                <h1 style="margin:5px 0; color:#fff; font-size:24px;">Микола (Kolya)</h1>
+                <p style="font-size:16px; color:#cbd5e1; margin-bottom: 5px;">Творець гри <b>"Економіка Полтави"</b></p>
+                <p style="font-size:14px; font-weight:bold; color:#10b981; margin-top:0;">📍 Зроблено в Полтаві 🇺🇦</p>
+                
+                <div style="margin-top:25px; padding: 20px; background: rgba(0,0,0,0.6); border-radius: 12px; border: 1px solid #f59e0b; box-shadow: inset 0 0 15px rgba(245,158,11,0.2);">
+                    <p style="margin-top:0; font-size:13px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">🔥 Підписуйтесь на мій YouTube:</p>
+                    <a href="https://youtube.com/@nikolosbond" target="_blank" class="btn-red" style="text-decoration:none; display:inline-block; font-size: 20px; font-weight: 900; padding: 15px 30px; box-shadow: 0 0 25px rgba(239,68,68,0.7); text-transform:uppercase;">▶ NikAndLos</a>
+                </div>
+                
+                <p style="font-size:11px; color:#64748b; margin-top:25px;">Створено з душею. 2026 рік.</p>
+            </div>
         </div>
 
         <div id="lobby-screen" style="display:none; text-align:center; background: rgba(15,23,42,0.9); padding: 20px; border-radius: 15px; border: 2px solid #3b82f6;">
@@ -95,11 +161,20 @@
                 <div class="center-logo">ЕКОНОМІКА<br>ПОЛТАВИ</div>
                 
                 <div class="center-panels">
-                    <div class="info-box" onclick="openDepositMenu()"><div class="info-title">Парковка</div><div class="info-amount jackpot" id="jackpot-display">i₴0</div></div>
-                    <div class="info-box crypto" onclick="openCryptoMenu()"><div class="info-title">Біржа</div><div class="info-amount crypto">📈</div></div>
+                    <div class="info-box" onclick="openDepositMenu()">
+                        <div class="info-title">Парковка</div>
+                        <div class="info-amount jackpot" id="jackpot-display">i₴0</div>
+                    </div>
+                    <div class="info-box crypto" onclick="openCryptoMenu()">
+                        <div class="info-title">Біржа</div>
+                        <div class="info-amount crypto">📈</div>
+                    </div>
                 </div>
                 
-                <div class="scene"><div class="die-2d" id="die1"></div><div class="die-2d" id="die2"></div></div>
+                <div class="scene">
+                    <div class="die-2d" id="die1"></div>
+                    <div class="die-2d" id="die2"></div>
+                </div>
             </div>
         </div>
         
