@@ -29,16 +29,6 @@ let pendingTrade = null;
 function stopTimer() {}
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const dotL = { 
-    1:[0,0,0,0,1,0,0,0,0], 
-    2:[1,0,0,0,0,0,0,0,1], 
-    3:[1,0,0,0,1,0,0,0,1], 
-    4:[1,0,1,0,0,0,1,0,1], 
-    5:[1,0,1,0,1,0,1,0,1], 
-    6:[1,0,1,1,0,1,1,0,1] 
-};
-const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
-
 
 // === МЕРЕЖЕВА ЛОГІКА (SOCKET.IO) ===
 if (socket) {
@@ -514,7 +504,7 @@ function updateUI() {
 
 function logMsgLocal(msg) { 
     const log = document.getElementById('log'); 
-    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">${msg}</div>` + log.innerHTML; 
+    log.innerHTML = `<div style="margin-bottom:6px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:4px;">• ${msg}</div>` + log.innerHTML; 
     log.scrollTop = 0;
 }
 
@@ -1139,7 +1129,7 @@ async function movePlayer(steps) {
                     logMsg(isExactGo ? `<b>${p.name}</b> став РІВНО на СТАРТ! Премія: <b>+i₴4000</b>` : `<b>${p.name}</b> пройшов СТАРТ. Зарплата <b>+i₴2000</b>`); 
                     updateUI(); 
                 }
-                playSound('sfx-earn');
+                playSound('sfx-step');
             }
         }
         const targetArea = document.getElementById(`tokens-${p.pos}`); 
