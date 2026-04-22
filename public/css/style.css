@@ -96,8 +96,38 @@ body {
     display: block; 
 }
 
+/* ЦАРСЬКА ВКАЛДКА РОЗРОБНИКА */
 .dev-container { 
     text-align: center; 
+    padding: 15px;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.royal-dev-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    padding: 30px 20px;
+    border-radius: 20px;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 15px 40px rgba(245,158,11,0.3), inset 0 0 20px rgba(245,158,11,0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.royal-dev-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(245,158,11,0.1) 0%, transparent 60%);
+    animation: rotateGlow 10s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes rotateGlow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .setup-row { 
@@ -168,7 +198,6 @@ button:disabled {
     color: #94a3b8 !important; 
     box-shadow: none !important; 
     transform: none !important; 
-    pointer-events: none;
 }
 
 .btn-green { background: linear-gradient(135deg, #10b981, #059669); box-shadow: 0 4px 10px rgba(16,185,129,0.3); } 
@@ -442,7 +471,7 @@ button:disabled {
     box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
-/* === ФІШКИ (ВАЖЛИВО: pointer-events: none) === */
+/* === ФІШКИ (pointer-events: none) === */
 .tokens-area { 
     display: flex; 
     flex-wrap: wrap; 
@@ -476,7 +505,7 @@ button:disabled {
 /* === ПАНЕЛЬ КЕРУВАННЯ ТА ЧАТ === */
 .controls { 
     width: 95vmin; 
-    max-width: 350px; 
+    max-width: 380px; 
     background: var(--glass); 
     padding: 20px; 
     border-radius: 12px; 
@@ -485,12 +514,12 @@ button:disabled {
     
     /* Правильна сітка кнопок */
     display: grid; 
-    grid-template-columns: 1fr 1fr; 
+    grid-template-columns: repeat(3, 1fr); 
     gap: 8px; 
 }
 
 #current-turn { 
-    grid-column: span 2; 
+    grid-column: span 3; 
     margin-top: 0; 
     font-size: 15px; 
     border-bottom: 1px solid #334155; 
@@ -499,7 +528,7 @@ button:disabled {
 }
 
 #roll-btn { 
-    grid-column: span 2; 
+    grid-column: span 3; 
     padding: 15px; 
     font-size: 16px; 
     margin-bottom: 5px; 
@@ -507,13 +536,15 @@ button:disabled {
 
 .controls button { 
     margin-bottom: 0; 
+    padding: 10px 5px;
+    font-size: 12px;
 }
 
 #log { 
-    grid-column: span 2;
-    height: 140px; 
+    grid-column: span 3;
+    height: 120px; 
     overflow-y: auto; 
-    font-size: 12px; 
+    font-size: 13px; 
     color: #cbd5e1; 
     border-top: 1px solid #334155; 
     padding-top: 10px; 
@@ -522,19 +553,8 @@ button:disabled {
     text-align: left;
 }
 
-#log b { 
-    color: #fff; 
-}
-
-/* Адаптація для телефонів: щоб кнопки були у 3 стовпці і не займали пів екрана */
-@media (max-width: 900px) {
-    .controls { 
-        grid-template-columns: 1fr 1fr 1fr; 
-    }
-    #current-turn { grid-column: span 3; }
-    #roll-btn { grid-column: span 3; }
-    #log { grid-column: span 3; }
-}
+#log div { margin-bottom: 4px; }
+#log b { color: #fff; }
 
 /* === МОДАЛЬНІ ВІКНА === */
 .modal-overlay { 
