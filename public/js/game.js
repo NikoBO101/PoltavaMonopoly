@@ -1,5 +1,6 @@
 // === ГЛОБАЛЬНІ ЗМІННІ (БЕЗПЕЧНІ) ===
-var players = []; 
+var currentUser = JSON.parse(localStorage.getItem('poltavaUser')) || null; 
+var players = [];
 var turn = 0; 
 var properties = {}; 
 var jackpotAmount = 0;
@@ -249,7 +250,8 @@ function isMyTurn() {
 document.addEventListener("DOMContentLoaded", () => { 
     generatePlayerInputs(); 
     updateVolume(); 
-    if(!socket) renderRoomsList([]); // Якщо нема сервера, малюємо фейкові кімнати
+    updateProfileUI(); // <--- ДОДАЙ ЦЕЙ РЯДОК
+    if(!socket) renderRoomsList([]);
 });
 
 function switchTab(tabId) { 
@@ -1805,4 +1807,65 @@ function openAuctionModal() {
          <button class="btn-red" style="width:100%;" onclick="confirmAction('auction_pass', window.auctionData.idx, 0)">Я пас (не беру участь)</button>
          ${finishBtn}`
     );
+}
+// === ПРОФІЛЬ ТА ЛОГІН (Локальна версія) ===
+function updateProfileUI() {
+    let authForm = document.getElementById('auth-form');
+    let profileInfo = document.getElementById('profile-info');
+    let mpPlayerName = document.getElementById('mp-player-name'); // Поле "Ваше ім'я" в онлайні
+    
+    if (!authForm || !profileInfo) return;
+
+    if (currentUser) {
+        authForm.style.display = 'none';
+        profileInfo.style.display = 'block';
+        
+        document.getElementById('user-display-name').innerText = currentUser.nick;
+        document.getElementById('user-wins').innerText = currentUser.wins || 0;
+        document.getElementById('user-active-title').innerText = currentUser.activeTitle || "Новачок";
+        document.getElementById('user-coins').innerText = currentUser.coins || 0;
+        
+        // Магія: якщо ти зайшов, твоє ім'я автоматично підставляється в онлайн-кімнати!
+        if (mpPlayerName) {
+            mpPlayerName.value = currentUser.nick;
+            mpPlayerName.disabled = true; // Забороняємо міняти ім'я без профілю
+        }
+    } else {
+        authForm.style.display = 'block';
+        profileInfo.style.display = 'none';
+        if (mpPlayerName) {
+            mpPlayerName.value = "Гравець";
+            mpPlayerName.disabled = false;
+        }
+    }
+}
+
+function loginAction() {
+    let nick = document.getElementById('auth-nick').value.trim();
+    let pin = document.getElementById('auth-pin').value.trim();
+    
+    if (!nick || nick.length < 3) return alert("Нікнейм має бути мінімум 3 символи!");
+    if (!pin || pin.length !== 4 || isNaN(pin)) return alert("PIN-код має складатися з 4 цифр!");
+    
+    // Створюємо "профіль" і зберігаємо в пам'ять браузера
+    currentUser = {
+        nick: nick,
+        pin: pin,
+        wins: 0,
+        activeTitle: "Новачок",
+        coins: 100, // Даємо бонус 100 коїнів за реєстрацію!
+        titles: ["Новачок"]
+    };
+    
+    localStorage.setItem('poltavaUser', JSON.stringify(currentUser));
+    updateProfileUI();
+    alert(`Ласкаво просимо, ${nick}! Твій профіль створено.`);
+}
+
+function logoutAction() {
+    if(confirm("Дійсно хочеш вийти з акаунту?")) {
+        currentUser = null;
+        localStorage.removeItem('poltavaUser');
+        updateProfileUI();
+    }
 }
