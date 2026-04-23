@@ -129,22 +129,29 @@
                     </div>
                 </div>
 
-                <div id="tab-friends" class="tab-content" style="display:none;">
-                    <div id="friends-auth-warning" style="color: #f59e0b; margin-bottom: 15px; font-size: 16px;">⚠️ Увійдіть в профіль, щоб додавати друзів!</div>
-                    <div id="friends-container" style="display:none;">
-                        <h3 style="margin-top: 0; color: #f472b6;">Список друзів</h3>
-                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                            <input type="text" id="friend-search-input" placeholder="Нікнейм друга..." style="flex: 1; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius: 5px;">
-                            <button class="btn-blue" onclick="alert('Функція додавання друзів в розробці!')" style="padding: 12px 25px; margin: 0;">Додати</button>
-                        </div>
-                        <div style="background: rgba(0,0,0,0.2); border-radius: 8px; padding: 15px; min-height: 200px;">
-                            <h4 style="margin-top:0; color:#94a3b8; font-size:14px; text-transform:uppercase; border-bottom: 1px solid #334155; padding-bottom: 10px;">Ваші контакти</h4>
-                            <div id="friends-list-ui">
-                                <p style="color: #64748b; font-size: 15px; text-align: center; margin-top: 50px;">У вас поки немає друзів.<br>Знайдіть когось за нікнеймом!</p>
-                            </div>
-                        </div>
-                    </div>
+<div id="tab-friends" class="tab-content" style="display:none;">
+    <div id="friends-auth-warning" style="color: #f59e0b; margin-bottom: 15px;">⚠️ Увійдіть, щоб бачити друзів</div>
+    
+    <div id="friends-container" style="display:none;">
+        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 20px;">
+            <div>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <input type="text" id="friend-search-input" placeholder="Пошук по ніку..." style="flex:1; padding:10px; background:#0f172a; border:1px solid #334155; color:#fff;">
+                    <button class="btn-blue" onclick="searchFriend()" style="margin:0;">🔍</button>
                 </div>
+                <div id="friends-list-ui" class="scrollable-area" style="height: 250px; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;">
+                    <p style="color:#64748b; text-align:center;">Список порожній</p>
+                </div>
+            </div>
+            
+            <div style="background:rgba(30,41,59,0.5); padding:15px; border-radius:10px; border:1px solid #334155;">
+                <h4 style="margin:0 0 10px 0; color:#3b82f6;">Зараз у грі</h4>
+                <div id="global-online-list" style="font-size:13px; color:#cbd5e1;">
+                    </div>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <div id="tab-rules" class="tab-content text-left" style="display:none;">
                     <h2 style="color:#10b981; text-align:center; margin-top:0;">📜 ПРАВИЛА ГРИ</h2>
