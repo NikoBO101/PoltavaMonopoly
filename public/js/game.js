@@ -2150,3 +2150,37 @@ function confirmTeleport(idx) {
         });
     }
 }
+// === ЛОГІКА ПЕРЕМИКАННЯ ВНАСЛІДОК НАТИСКАННЯ В МЕНЮ ===
+function switchTab(tabId) {
+    // 1. Ховаємо всі сторінки (вкладки)
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+        tab.classList.remove('active-tab');
+    });
+    
+    // 2. Знімаємо підсвітку з усіх кнопок меню
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active-btn');
+        btn.style.background = 'transparent'; // Скидаємо фон
+    });
+
+    // 3. Показуємо ту сторінку, на яку натиснули
+    let activeTab = document.getElementById(tabId);
+    if (activeTab) {
+        activeTab.style.display = 'block';
+        activeTab.classList.add('active-tab');
+    }
+    
+    // 4. Підсвічуємо натиснуту кнопку
+    let activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+    if (activeBtn) {
+        activeBtn.classList.add('active-btn');
+        activeBtn.style.background = 'rgba(59, 130, 246, 0.2)'; // Легка синя підсвітка
+        activeBtn.style.borderBottom = '3px solid #3b82f6';
+    }
+}
+
+// Запускаємо першу вкладку (Локальна гра) при завантаженні сторінки
+document.addEventListener('DOMContentLoaded', () => {
+    switchTab('tab-local');
+});
