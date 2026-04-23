@@ -1952,18 +1952,19 @@ function logoutAction() {
     }
 }
 
+// === КУПІВЛЯ ТОВАРУ (КЛІЄНТСЬКА ЧАСТИНА) ===
 function buyItemAction(itemId) {
     if (!currentUser) return alert("Спершу увійди в Профіль!");
     if (!socket || !socket.connected) return alert("Немає зв'язку з сервером!");
     
     if (confirm("Точно хочеш купити цей предмет за Галушки?")) {
         socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
-            if (res.success) {
+            if (res && res.success) {
                 currentUser = res.user;
                 updateProfileUI(); 
                 alert("🎉 " + res.msg);
             } else {
-                alert("❌ " + res.msg);
+                alert("❌ " + (res ? res.msg : "Помилка покупки"));
             }
         });
     }
