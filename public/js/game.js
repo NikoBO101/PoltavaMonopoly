@@ -105,80 +105,62 @@ socket.on('updateRoomsList', (roomsList) => {
         renderRoomsList(roomsList);
     });
     
-    socket.on('roomJoined', (roomData) => {
-        currentLobby = roomData; 
-        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none'); 
-        document.querySelectorAll('.menu-tabs').forEach(t => t.style.display = 'none');
-        document.getElementById('lobby-screen').style.display = 'block'; 
-        document.getElementById('lobby-code').innerText = roomData.id; 
-        renderLobbyPlayers(roomData.players);
-    });
+    // Функція, яка ховає меню і показує лобі
+socket.on('roomJoined', (room) => {
+    currentLobby = room;
     
-    socket.on('roomPlayersUpdated', (playersList) => { 
-        if (currentLobby) { 
-            currentLobby.players = playersList; 
-            renderLobbyPlayers(playersList); 
-        } 
-    });
+    // 1. Ховаємо головне меню повністю
+    const mainMenu = document.getElementById('main-menu');
+    if (mainMenu) mainMenu.style.display = 'none';
     
-    socket.on('joinError', (msg) => { alert(msg); });
+    // 2. Показуємо екран лобі
+    const lobbyScreen = document.getElementById('lobby-screen');
+    if (lobbyScreen) {
+        lobbyScreen.style.display = 'block';
+    } else {
+        console.error("Помилка: Елемент lobby-screen не знайдено в HTML!");
+    }
+    
+    updateLobbyUI();
+});
 
-    socket.on('gameStarted', (serverGameState) => {
-        isOnlineMode = true; 
-        currentRound = serverGameState.currentRound; 
-        turn = serverGameState.turn; 
-        
-        players = serverGameState.players.map((p, i) => ({
-            ...p, 
-            color: playerColors[i % playerColors.length], 
-            money: 15000, deposit: 0, loan: 0, loanTurns: 0, pos: 0, 
-            inJail: false, jailTurns: 0, doublesCount: 0, isBankrupt: false, 
-            skipTurns: 0, reverseMove: false, portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
-            stockHistory: [], debtMode: false
-        }));
-        
-        document.getElementById('lobby-screen').style.display = 'none'; 
-        document.getElementById('main-menu').style.display = 'none'; 
-        document.getElementById('game-container').style.display = 'flex';
-        
-        render2DDie('die1', 1); 
-        render2DDie('die2', 1); 
-        initBoard(); 
-        updateUI(); 
-        logMsg(`🎮 Онлайн гру запущено!`);
-    });
+// Оновлення списку гравців
+socket.on('roomPlayersUpdated', (players) => {
+    if (currentLobby) {
+        currentLobby.players = players;
+        updateLobbyUI();
+    }
+});
 
-    socket.on('diceRolled', async (data) => {
-        await processRollAndMove(data.v1, data.v2);
-    });
+// Функція оновлення інтерфейсу (перевір, щоб вона була одна в файлі)
+function updateLobbyUI() {
+    const lobbyScreen = document.getElementById('lobby-screen');
+    if (!currentLobby || !lobbyScreen) return;
 
-    socket.on('syncAction', (data) => {
-        const actor = players.find(p => p.id === data.senderId);
-        if (actor) {
-            executeAction(actor, data.type, data.idx, data.val);
-        }
-    });
+    // Перевіряємо кожен елемент окремо, щоб не "ляснув" весь скрипт
+    const elName = document.getElementById('lobby-room-name');
+    const elCode = document.getElementById('lobby-room-code');
+    const elList = document.getElementById('lobby-players-list');
+    const elStartBtn = document.getElementById('lobby-start-btn');
 
-    socket.on('updateGameState', (stateData) => {
-        players = stateData.players; 
-        properties = stateData.properties; 
-        turn = stateData.turn; 
-        jackpotAmount = stateData.jackpotAmount; 
-        stocks = stateData.stocks; 
-        currentRound = stateData.currentRound || currentRound;
-        
-        isRolling = false;
-        
-        players.forEach(p => { 
-            const token = document.getElementById(`token-${p.id}`); 
-            const target = document.getElementById(`tokens-${p.pos}`); 
-            if (token && target) target.appendChild(token); 
+    if (elName) elName.innerText = currentLobby.name;
+    if (elCode) elCode.innerText = currentLobby.id;
+    
+    if (elList) {
+        elList.innerHTML = '';
+        currentLobby.players.forEach(p => {
+            const li = document.createElement('li');
+            li.style.padding = "5px 0";
+            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color: ${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
+            elList.appendChild(li);
         });
-        for (let i in properties) {
-            drawHouses(i, properties[i].houses);
-        }
-        updateUI();
-    });
+    }
+
+    if (elStartBtn) {
+        const isHost = currentLobby.players.find(p => p.id === socket.id && p.isHost);
+        // Кнопка старт з'явиться, якщо ти хост і є хоча б 1 гравець (для тесту можна поставити >= 1)
+        elStartBtn.style.display = (isHost && currentLobby.players.length >= 1) ? 'block' : 'none';
+    }
 }
 
 function renderRoomsList(realRooms) {
