@@ -2245,4 +2245,3 @@ function startOnlineGame() {
     if (currentLobby) {
         socket.emit('startGame', currentLobby.id);
     }
-}
