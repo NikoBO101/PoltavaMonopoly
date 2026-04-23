@@ -11,6 +11,7 @@ var currentRound = 1;
 var debtAlertShown = false; 
 var jackpotRate = 0.5;
 var isOnlineMode = false;
+var kumActive = false; // Картка "Кум вирішив питання" — пропускає оренду один раз
 
 // Повноцінна Біржа
 var stocks = { 
@@ -1705,6 +1706,9 @@ function applyCard() {
                 logMsg(`${pl.name} платить i₴${tax} податку на будівлі.`); 
             } 
         });
+    } else if (c.action === 'kum') {
+        kumActive = true;
+        logMsg(`🤝 <b>${p.name}</b> зателефонував куму. Наступну оренду — не платить!`);
     }
     updateUI(); 
     if (!processDebts()) processNextTurn(p);
