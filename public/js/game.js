@@ -468,7 +468,7 @@ function startLocalGame() {
     for (let i = 0; i < c; i++) {
         let isBotChecked = document.getElementById(`p${i}-isbot`).checked;
         
-        // Визначаємо фішку: якщо це Гравець 1 (ти) і ти залогінений — беремо твою фішку!
+        // Визначаємо фішку
         let pToken = 'token_default';
         if (i === 0 && currentUser && currentUser.equippedToken) {
             pToken = currentUser.equippedToken;
@@ -493,11 +493,11 @@ function startLocalGame() {
             portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
             stockHistory: [], 
             debtMode: false,
-            equippedToken: pToken // <- Ось тут ми передаємо фішку в гру!
+            equippedToken: pToken
         });
     }
     
-document.getElementById('main-menu').style.display = 'none'; 
+    document.getElementById('main-menu').style.display = 'none'; 
     document.getElementById('game-container').style.display = 'flex';
     document.getElementById('return-game-btn').style.display = 'block';
     
@@ -589,6 +589,7 @@ function initBoard() {
 
         document.getElementById('tokens-0').appendChild(token); 
     });
+}
 
 function updatePropertyColors() {
     for (let i = 0; i < 40; i++) {
