@@ -2132,27 +2132,24 @@ function confirmTeleport(idx) {
     }
 }
 // === ЛОГІКА ПЕРЕМИКАННЯ ВНАСЛІДОК НАТИСКАННЯ В МЕНЮ ===
+// === ЛОГІКА ПЕРЕМИКАННЯ ВКЛАДОК ===
 function switchTab(tabId) {
-    // 1. Ховаємо всі сторінки (вкладки)
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.style.display = 'none';
         tab.classList.remove('active-tab');
     });
     
-    // 2. Знімаємо підсвітку з усіх кнопок меню
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active-btn');
         btn.style.background = 'transparent'; 
     });
 
-    // 3. Показуємо ту сторінку, на яку натиснули
     let activeTab = document.getElementById(tabId);
     if (activeTab) {
         activeTab.style.display = 'block';
         activeTab.classList.add('active-tab');
     }
     
-    // 4. Підсвічуємо натиснуту кнопку
     let activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
     if (activeBtn) {
         activeBtn.classList.add('active-btn');
@@ -2161,77 +2158,36 @@ function switchTab(tabId) {
     }
 }
 
-// Запускаємо першу вкладку (Локальна гра) при завантаженні сторінки
+// Запуск при завантаженні
 document.addEventListener('DOMContentLoaded', () => {
-    // ТУТ ВАЖЛИВО: назва має бути 'tab-newgame', як у твоєму HTML
     switchTab('tab-newgame');
+    generatePlayerInputs();
 });
-
-// === АВТОМАТИЧНИЙ ЛОГІН ТА СИНХРОНІЗАЦІЯ ГАЛУШОК ===
-function autoLogin() {
-    let savedUser = JSON.parse(localStorage.getItem('poltavaUser'));
-    if (savedUser && savedUser.nick && savedUser.pin) {
-        if (socket && socket.connected) {
-            socket.emit('login', { nick: savedUser.nick, pin: savedUser.pin }, (res) => {
-                if (res && res.success) {
-                    currentUser = res.user;
-                    updateProfileUI(); 
-                } else {
-                    currentUser = null;
-                    localStorage.removeItem('poltavaUser');
-                    updateProfileUI();
-                }
-            });
-        }
-    }
-}
-
-if (socket) {
-    socket.on('connect', () => {
-        autoLogin();
-    });
-}
-
-// === ЛОГІКА ДРУЗІВ (В РОЗРОБЦІ) ===
-function searchFriend() {
-    let input = document.getElementById('friend-search-input');
-    if (!input || !input.value.trim()) {
-        return alert("Введіть нікнейм для пошуку!");
-    }
-    alert("Функція пошуку друзів у процесі розробки! 🛠️");
-}
 
 // === ОНЛАЙН: ЛОГІКА ЛОБІ ===
 function updateLobbyUI() {
     if (!currentLobby) return;
     
-    let elRoomName = document.getElementById('lobby-room-name');
-    let elRoomCode = document.getElementById('lobby-room-code');
-    let elCount = document.getElementById('lobby-players-count');
-    let elList = document.getElementById('lobby-players-list');
-    let elStartBtn = document.getElementById('lobby-start-btn');
+    const elName = document.getElementById('lobby-room-name');
+    const elCode = document.getElementById('lobby-room-code');
+    const elList = document.getElementById('lobby-players-list');
+    const elStartBtn = document.getElementById('lobby-start-btn');
 
-    if (elRoomName) elRoomName.innerText = currentLobby.name;
-    if (elRoomCode) elRoomCode.innerText = currentLobby.id;
-    if (elCount) elCount.innerText = currentLobby.players.length;
+    if (elName) elName.innerText = currentLobby.name;
+    if (elCode) elCode.innerText = currentLobby.id;
     
     if (elList) {
         elList.innerHTML = '';
-        let amIHost = false;
         currentLobby.players.forEach(p => {
-            let li = document.createElement('li');
+            const li = document.createElement('li');
             li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color: ${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
             elList.appendChild(li);
-            if (p.id === socket.id && p.isHost) amIHost = true;
         });
-        
-        if (elStartBtn) {
-            if (amIHost && currentLobby.players.length >= 1) { // >=1 для тестів, щоб ти міг сам зайти
-                elStartBtn.style.display = 'block';
-            } else {
-                elStartBtn.style.display = 'none';
-            }
-        }
+    }
+
+    if (elStartBtn) {
+        const isHost = currentLobby.players.find(p => p.id === socket.id && p.isHost);
+        elStartBtn.style.display = (isHost && currentLobby.players.length >= 1) ? 'block' : 'none';
     }
 }
 
@@ -2245,4 +2201,16 @@ function startOnlineGame() {
     if (currentLobby) {
         socket.emit('startGame', currentLobby.id);
     }
+}
+
+// Важливо: закриваємо блок if(socket), якщо він був відкритий зверху
+if (socket) {
+    socket.on('connect', () => {
+        let savedUser = JSON.parse(localStorage.getItem('poltavaUser'));
+        if (savedUser) {
+            socket.emit('login', { nick: savedUser.nick, pin: savedUser.pin }, (res) => {
+                if (res.success) { currentUser = res.user; updateProfileUI(); }
+            });
+        }
+    });
 }
