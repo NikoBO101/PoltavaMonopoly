@@ -279,6 +279,11 @@ function switchTab(tabId) {
 }
 
 function returnToGame() {
+    // Перевіряємо, чи є гравці. Якщо ні — гра ще не створена!
+    if (!players || players.length === 0) {
+        alert("Спершу натисни '🎮 ПОЧАТИ ГРУ' або зайди в Онлайн-кімнату!");
+        return;
+    }
     document.getElementById('main-menu').style.display = 'none';
     document.getElementById('game-container').style.display = 'flex';
 }
