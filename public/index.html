@@ -312,7 +312,23 @@
     </div>
 
     <div class="dashboard" id="dashboard" style="margin-top: 70px;"></div>
-
+<div id="lobby-screen" style="display:none; background: rgba(15, 23, 42, 0.95); border: 2px solid #10b981; border-radius: 15px; width: 90%; max-width: 500px; margin: 80px auto 20px auto; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); text-align: center; z-index: 100;">
+        <h2 style="color: #10b981; margin-top: 0; font-size: 24px;">Кімната: <span id="lobby-room-name" style="color: #fff;">---</span></h2>
+        
+        <div style="background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #3b82f6;">
+            <span style="color: #94a3b8; font-size: 14px;">Код для запрошення:</span><br>
+            <b id="lobby-room-code" style="color: #f59e0b; font-size: 22px; letter-spacing: 2px;">...</b>
+        </div>
+        
+        <div style="background: rgba(30, 41, 59, 0.5); border-radius: 10px; padding: 15px; margin-bottom: 20px; border: 1px solid #334155;">
+            <h3 style="margin: 0 0 10px 0; color: #3b82f6; text-align: left;">Гравці (<span id="lobby-players-count">1</span>/6)</h3>
+            <ul id="lobby-players-list" style="list-style: none; padding: 0; margin: 0; text-align: left; color: #fff; font-size: 16px; line-height: 2;">
+                </ul>
+        </div>
+        
+        <button id="lobby-start-btn" class="btn-blue" style="display:none; width: 100%; padding: 15px; font-size: 18px; margin-bottom: 10px;" onclick="startOnlineGame()">▶ ПОЧАТИ ГРУ</button>
+        <button class="btn-red" style="width: 100%; padding: 12px; font-size: 16px;" onclick="leaveLobby()">🚪 Вийти з кімнати</button>
+    </div>
     <div class="game-container" id="game-container">
         
         <div class="board" id="board">
