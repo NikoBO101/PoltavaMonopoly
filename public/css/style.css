@@ -741,3 +741,19 @@ button:disabled {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
+/* === ФІКС МОБІЛЬНОГО СКРОЛУ === */
+.scrollable-area {
+    overflow-y: auto;
+    overscroll-behavior: contain; /* Блокує передачу скролу на задній фон */
+    -webkit-overflow-scrolling: touch; /* Плавний скрол на iOS */
+}
+
+/* Робимо саме вікно меню скрол-сумісним для маленьких екранів */
+.app-window-content {
+    padding: 20px;
+    min-height: 350px;
+    max-height: 60vh; /* Вікно не буде вилазити за екран на дрібних телефонах */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
