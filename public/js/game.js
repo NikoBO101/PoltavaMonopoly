@@ -132,36 +132,7 @@ socket.on('roomPlayersUpdated', (players) => {
     }
 });
 
-// Функція оновлення інтерфейсу (перевір, щоб вона була одна в файлі)
-function updateLobbyUI() {
-    const lobbyScreen = document.getElementById('lobby-screen');
-    if (!currentLobby || !lobbyScreen) return;
-
-    // Перевіряємо кожен елемент окремо, щоб не "ляснув" весь скрипт
-    const elName = document.getElementById('lobby-room-name');
-    const elCode = document.getElementById('lobby-room-code');
-    const elList = document.getElementById('lobby-players-list');
-    const elStartBtn = document.getElementById('lobby-start-btn');
-
-    if (elName) elName.innerText = currentLobby.name;
-    if (elCode) elCode.innerText = currentLobby.id;
-    
-    if (elList) {
-        elList.innerHTML = '';
-        currentLobby.players.forEach(p => {
-            const li = document.createElement('li');
-            li.style.padding = "5px 0";
-            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color: ${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
-            elList.appendChild(li);
-        });
-    }
-
-    if (elStartBtn) {
-        const isHost = currentLobby.players.find(p => p.id === socket.id && p.isHost);
-        // Кнопка старт з'явиться, якщо ти хост і є хоча б 1 гравець (для тесту можна поставити >= 1)
-        elStartBtn.style.display = (isHost && currentLobby.players.length >= 1) ? 'block' : 'none';
-    }
-}
+} // === КІНЕЦЬ БЛОКУ if (socket) ===
 
 function renderRoomsList(realRooms) {
     const container = document.getElementById('mp-room-list'); 
@@ -230,8 +201,10 @@ function isMyTurn() {
 
 // === ІНІЦІАЛІЗАЦІЯ ТА UI ===
 document.addEventListener("DOMContentLoaded", () => {
+    switchTab('tab-newgame');
     generatePlayerInputs();
     updateVolume();
+    updateProfileUI();
     
     // Авто-логін, якщо дані є в пам'яті браузера
     let saved = localStorage.getItem('poltavaUser');
@@ -246,19 +219,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
         }, 1000);
-    } else {
-        updateProfileUI();
     }
 
     if(!socket) renderRoomsList([]);
 });
-
-function switchTab(tabId) { 
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); 
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); 
-    document.getElementById(tabId).classList.add('active'); 
-    event.currentTarget.classList.add('active'); 
-}
 
 function returnToGame() {
     // Перевіряємо, чи є гравці. Якщо ні — гра ще не створена!
@@ -2016,8 +1980,3 @@ if (socket) {
         }
     });
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    switchTab('tab-newgame');
-    updateProfileUI();
-});
