@@ -727,7 +727,17 @@ function executeAction(p, type, idx, val) {
         processNextTurn(p);
     } 
     else if (type === 'rent') {
+        // КОРУПЦІЙНИЙ ФІКС: Якщо кум вирішив питання
+        if (kumActive) {
+            logMsg(`😎 <b>${p.name}</b> просто кивнув власнику. Кум все вирішив, оренду не платимо!`);
+            kumActive = false; // Використали послугу
+            processNextTurn(p);
+            return;
+        }
+        
         const owner = players.find(pl => pl.id === properties[idx].owner);
+        
+        // ОСЬ ЦІ ДВА РЯДКИ БУЛИ ВТРАЧЕНІ (переказ грошей):
         p.money -= val;
         owner.money += val;
         
@@ -741,11 +751,6 @@ function executeAction(p, type, idx, val) {
         playSound('sfx-spend');
         processNextTurn(p);
     }
-    else if (type === 'tax') {
-        deductMoney(p, val);
-        logMsgLocal(`<b>${p.name}</b> сплатив податок: i₴${val}.`);
-        processNextTurn(p);
-    } 
     else if (type === 'pass') {
         logMsgLocal(`<b>${p.name}</b> відмовився від покупки.`);
         processNextTurn(p);
@@ -1994,4 +1999,93 @@ function equipItemAction(itemId) {
             alert("❌ " + res.msg);
         }
     });
+}
+// === СИСТЕМА КОРУПЦІЇ ===
+var kumActive = false; // Статус "Дзвінка куму"
+
+function openCorruptionMenu() {
+    if (!currentUser) return alert("Треба увійти в профіль, щоб використовувати зв'язки!");
+    if (!isMyTurn()) return alert("Зараз не твій хід!");
+
+    let html = `
+        <p style="font-size:12px; color:#94a3b8; margin-bottom:15px;">Тіньові послуги Полтави. Оплата в 🥟.</p>
+        
+        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; border:1px solid #ef4444; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="text-align:left;">
+                <b style="color:#fca5a5;">📞 Дзвінок Куму</b><br>
+                <span style="font-size:11px; color:#94a3b8;">Не плати оренду наступний хід</span>
+            </div>
+            <button class="btn-red" style="width:80px; padding:5px;" onclick="buyCorruption('kum', 150)">150 🥟</button>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; border:1px solid #f59e0b; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+            <div style="text-align:left;">
+                <b style="color:#fcd34d;">🎲 Свої кубики</b><br>
+                <span style="font-size:11px; color:#94a3b8;">Сам обери число (2-12)</span>
+            </div>
+            <button class="btn-gold" style="width:80px; padding:5px;" onclick="buyCorruption('dice', 100)">100 🥟</button>
+        </div>
+
+        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; border:1px solid #3b82f6; display:flex; justify-content:space-between; align-items:center;">
+            <div style="text-align:left;">
+                <b style="color:#93c5fd;">🚜 Рейдерство</b><br>
+                <span style="font-size:11px; color:#94a3b8;">Купи бізнес за 2х ціни (i₴)</span>
+            </div>
+            <button class="btn-blue" style="width:80px; padding:5px;" onclick="buyCorruption('raider', 300)">300 🥟</button>
+        </div>
+    `;
+    openModal("🕵️ ТІНЬОВИЙ РИНОК", html, `<button class="btn-blue" onclick="closeModal()">Закрити</button>`);
+}
+
+function buyCorruption(type, cost) {
+    socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: cost, serviceName: type }, (res) => {
+        if (res.success) {
+            currentUser = res.user;
+            updateProfileUI();
+            closeModal();
+            activateCorruption(type);
+        } else {
+            alert(res.msg);
+        }
+    });
+}
+
+function activateCorruption(type) {
+    if (type === 'kum') {
+        kumActive = true;
+        logMsg(`🕵️ <b>${currentUser.nick}</b> "подзвонив куму". Оренда на цей хід скасована!`);
+    } 
+    else if (type === 'dice') {
+        let val = prompt("Яке число викинути? (2-12)");
+        val = parseInt(val);
+        if (val >= 2 && val <= 12) {
+            logMsg(`🎲 <b>${currentUser.nick}</b> дістав підкручені кубики!`);
+            // Емулюємо кидок
+            let v1 = Math.floor(val/2);
+            let v2 = val - v1;
+            processRollAndMove(v1, v2);
+        }
+    }
+    else if (type === 'raider') {
+        let idx = prompt("Введіть номер клітинки (0-39) для захоплення:");
+        idx = parseInt(idx);
+        let cell = mapData[idx];
+        let prop = properties[idx];
+        
+        if (!prop || !cell.price || prop.houses > 0) {
+            return alert("❌ Неможливо захопити: або там будинки, або це не бізнес!");
+        }
+        
+        let raiderPrice = cell.price * 2;
+        if (players[turn].money < raiderPrice) return alert("Не вистачає i₴ для рейдерства!");
+        
+        players[turn].money -= raiderPrice;
+        let oldOwner = players.find(p => p.id === prop.owner);
+        if (oldOwner) oldOwner.money += raiderPrice;
+        
+        properties[idx] = { owner: players[turn].id, houses: 0, isMortgaged: false };
+        logMsg(`🚜 <b>РЕЙДЕРСТВО!</b> <b>${players[turn].name}</b> силоміць забрав <b>${cell.name}</b> у <b>${oldOwner.name}</b> за i₴${raiderPrice}!`);
+        playSound('sfx-bankrupt');
+        updateUI();
+    }
 }
