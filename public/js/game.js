@@ -1135,6 +1135,7 @@ function submitTrade() {
     document.querySelectorAll('[id^="give-prop-"]:checked').forEach(cb => pGive.push(parseInt(cb.value))); 
     document.querySelectorAll('[id^="take-prop-"]:checked').forEach(cb => pTake.push(parseInt(cb.value)));
     
+    // Перевірка будинків
     for (let i of [...pGive, ...pTake]) { 
         for (let j in properties) { 
             if (mapData[j].group === mapData[i].group && properties[j].houses > 0) return alert(`Спершу продайте всі будинки в цьому районі!`); 
@@ -1142,16 +1143,34 @@ function submitTrade() {
     }
     
     if (mGive === 0 && mTake === 0 && pGive.length === 0 && pTake.length === 0) return alert("Угода порожня!");
+
+    // === 🛡️ ПОДАТКОВА ТА АНТИМОНОПОЛЬНИЙ КОМІТЕТ ===
+    let valGive = 0, valTake = 0;
+    pGive.forEach(i => valGive += mapData[i].price); 
+    pTake.forEach(i => valTake += mapData[i].price);
+
+    // Правило 1: Заборона дарувати більше 1000 просто так
+    if (pGive.length === 0 && pTake.length === 0) {
+        if (mGive > 1000 || mTake > 1000) return alert("❌ Податкова заблокувала переказ: благодійність обмежена до i₴1000 за раз!");
+    }
+
+    // Правило 2: Обмеження націнки х3
+    if (mGive > 0 && pTake.length > 0 && mGive > valTake * 3) {
+        return alert(`❌ Антимонопольний комітет: ціна завищена! Максимум i₴${valTake * 3} за ці ділянки.`);
+    }
+    if (mTake > 0 && pGive.length > 0 && mTake > valGive * 3) {
+        return alert(`❌ Антимонопольний комітет: ціна завищена! Максимум i₴${valGive * 3} за ці ділянки.`);
+    }
+    // =================================================
+
     pendingTrade = { p1, p2, mGive, mTake, pGive, pTake };
 
     if (!isOnlineMode && p2.isBot) {
-        let valGive = mGive, valTake = mTake;
-        pGive.forEach(i => valGive += mapData[i].price); 
-        pTake.forEach(i => valTake += mapData[i].price);
-        
+        let valGiveBot = mGive + valGive;
+        let valTakeBot = mTake + valTake;
         let profitMargin = p2.name.includes('Важк') ? 500 : 100;
         
-        if (valGive >= valTake + profitMargin) { 
+        if (valGiveBot >= valTakeBot + profitMargin) { 
             logMsg(`🤖 <b>${p2.name}</b> погоджується на вигідну угоду!`); 
             acceptTrade(); 
         } else { 
