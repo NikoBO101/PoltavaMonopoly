@@ -757,3 +757,26 @@ button:disabled {
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
 }
+@media (max-width: 600px) {
+    /* Робимо шапку компактнішою на телефонах */
+    #game-header {
+        padding: 5px 10px !important;
+        height: 50px !important;
+    }
+    
+    #header-user-name {
+        font-size: 14px !important;
+    }
+
+    /* Збільшуємо зону контенту, щоб вміщалося більше серверів */
+    .app-window-content {
+        padding: 15px !important;
+        max-height: 75vh !important; /* Даємо 75% висоти екрану під контент */
+    }
+
+    /* Компактні кнопки вкладок */
+    .tab-btn {
+        padding: 10px 5px !important;
+        font-size: 11px !important;
+    }
+}
