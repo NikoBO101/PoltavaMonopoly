@@ -2210,3 +2210,11 @@ if (socket) {
         autoLogin();
     });
 }
+// === ЛОГІКА ДРУЗІВ (В РОЗРОБЦІ) ===
+function searchFriend() {
+    let input = document.getElementById('friend-search-input');
+    if (!input || !input.value.trim()) {
+        return alert("Введіть нікнейм для пошуку!");
+    }
+    alert("Функція пошуку друзів у процесі розробки! 🛠️");
+}
