@@ -2218,3 +2218,49 @@ function searchFriend() {
     }
     alert("Функція пошуку друзів у процесі розробки! 🛠️");
 }
+// === ОНЛАЙН: ЛОГІКА ЛОБІ ===
+function updateLobbyUI() {
+    if (!currentLobby) return;
+    
+    let elRoomName = document.getElementById('lobby-room-name');
+    let elRoomCode = document.getElementById('lobby-room-code');
+    let elCount = document.getElementById('lobby-players-count');
+    let elList = document.getElementById('lobby-players-list');
+    let elStartBtn = document.getElementById('lobby-start-btn');
+
+    if (elRoomName) elRoomName.innerText = currentLobby.name;
+    if (elRoomCode) elRoomCode.innerText = currentLobby.id;
+    if (elCount) elCount.innerText = currentLobby.players.length;
+    
+    if (elList) {
+        elList.innerHTML = '';
+        let amIHost = false;
+        currentLobby.players.forEach(p => {
+            let li = document.createElement('li');
+            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color: ${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
+            elList.appendChild(li);
+            if (p.id === socket.id && p.isHost) amIHost = true;
+        });
+        
+        if (elStartBtn) {
+            // Показуємо кнопку СТАРТ тільки хосту і якщо є мінімум 2 гравці
+            if (amIHost && currentLobby.players.length >= 2) {
+                elStartBtn.style.display = 'block';
+            } else {
+                elStartBtn.style.display = 'none';
+            }
+        }
+    }
+}
+
+function leaveLobby() {
+    if(confirm("Точно вийти з кімнати?")) {
+        location.reload(); // Швидкий скид гри
+    }
+}
+
+function startOnlineGame() {
+    if (currentLobby) {
+        socket.emit('startGame', currentLobby.id);
+    }
+}
