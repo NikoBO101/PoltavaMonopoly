@@ -1870,56 +1870,47 @@ function openAuctionModal() {
 // === ПРОФІЛЬ, ЛОГІН ТА МАГАЗИН ===
 
 function updateProfileUI() {
-    let authForm = document.getElementById('auth-form');
-    let profileInfo = document.getElementById('profile-info');
-    let shopWarning = document.getElementById('shop-auth-warning');
-    let shopContainer = document.getElementById('shop-container');
-    let friendsWarning = document.getElementById('friends-auth-warning');
-    let friendsContainer = document.getElementById('friends-container');
-    let gameHeader = document.getElementById('game-header');
+    const ids = ['auth-form', 'profile-info', 'shop-auth-warning', 'shop-container', 'friends-auth-warning', 'friends-container', 'game-header'];
+    const el = {};
+    ids.forEach(id => el[id] = document.getElementById(id));
 
     if (currentUser) {
-        if (authForm) authForm.style.display = 'none';
-        if (profileInfo) profileInfo.style.display = 'block';
-        if (shopWarning) shopWarning.style.display = 'none';
-        if (shopContainer) shopContainer.style.display = 'block';
-        if (friendsWarning) friendsWarning.style.display = 'none';
-        if (friendsContainer) friendsContainer.style.display = 'block';
-        if (gameHeader) gameHeader.style.display = 'flex';
+        if (el['auth-form']) el['auth-form'].style.display = 'none';
+        if (el['profile-info']) el['profile-info'].style.display = 'block';
+        if (el['shop-auth-warning']) el['shop-auth-warning'].style.display = 'none';
+        if (el['shop-container']) el['shop-container'].style.display = 'block';
+        if (el['friends-auth-warning']) el['friends-auth-warning'].style.display = 'none';
+        if (el['friends-container']) el['friends-container'].style.display = 'block';
+        if (el['game-header']) el['game-header'].style.display = 'flex';
 
-        if (document.getElementById('header-galushky')) document.getElementById('header-galushky').innerText = currentUser.galushky || 0;
-        if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = currentUser.nick;
-        if (document.getElementById('user-display-name')) document.getElementById('user-display-name').innerText = currentUser.nick;
-        if (document.getElementById('user-wins')) document.getElementById('user-wins').innerText = currentUser.wins || 0;
-        if (document.getElementById('user-coins')) document.getElementById('user-coins').innerText = (currentUser.galushky || 0) + " 🥟";
-        if (document.getElementById('shop-balance')) document.getElementById('shop-balance').innerText = (currentUser.galushky || 0) + " 🥟";
+        const setTxt = (id, txt) => { if(document.getElementById(id)) document.getElementById(id).innerText = txt; };
+        setTxt('header-galushky', currentUser.galushky || 0);
+        setTxt('header-user-name', currentUser.nick);
+        setTxt('user-display-name', currentUser.nick);
+        setTxt('user-wins', currentUser.wins || 0);
+        setTxt('user-coins', (currentUser.galushky || 0) + " 🥟");
+        setTxt('shop-balance', (currentUser.galushky || 0) + " 🥟");
 
-        let items = ['token_gold', 'token_bogdan', 'token_tank'];
-        items.forEach(item => {
-            let btnEquip = document.getElementById('equip-' + item);
-            if(btnEquip) {
+        ['token_gold', 'token_bogdan', 'token_tank'].forEach(item => {
+            let btn = document.getElementById('equip-' + item);
+            if(btn) {
                 if (currentUser.inventory && currentUser.inventory.includes(item)) {
-                    btnEquip.style.display = 'block'; 
-                    if (currentUser.equippedToken === item) {
-                        btnEquip.innerText = '✅ Вдягнено';
-                        btnEquip.className = 'btn-gold'; 
-                    } else {
-                        btnEquip.innerText = 'Вдягнути';
-                        btnEquip.className = 'btn-green';
-                    }
+                    btn.style.display = 'block'; 
+                    btn.innerText = (currentUser.equippedToken === item) ? '✅ Вдягнено' : 'Вдягнути';
+                    btn.className = (currentUser.equippedToken === item) ? 'btn-gold' : 'btn-green';
                 } else {
-                    btnEquip.style.display = 'none';
+                    btn.style.display = 'none';
                 }
             }
         });
     } else {
-        if (authForm) authForm.style.display = 'block';
-        if (profileInfo) profileInfo.style.display = 'none';
-        if (shopWarning) shopWarning.style.display = 'block';
-        if (shopContainer) shopContainer.style.display = 'none';
-        if (friendsWarning) friendsWarning.style.display = 'block';
-        if (friendsContainer) friendsContainer.style.display = 'none';
-        if (gameHeader) gameHeader.style.display = 'none';
+        if (el['auth-form']) el['auth-form'].style.display = 'block';
+        if (el['profile-info']) el['profile-info'].style.display = 'none';
+        if (el['shop-auth-warning']) el['shop-auth-warning'].style.display = 'block';
+        if (el['shop-container']) el['shop-container'].style.display = 'none';
+        if (el['friends-auth-warning']) el['friends-auth-warning'].style.display = 'block';
+        if (el['friends-container']) el['friends-container'].style.display = 'none';
+        if (el['game-header']) el['game-header'].style.display = 'none';
     }
 }
 
@@ -1928,52 +1919,54 @@ function loginAction() {
     let pin = document.getElementById('auth-pin').value.trim();
     if (!nick || nick.length < 3) return alert("Нікнейм має бути мінімум 3 символи!");
     if (!pin || pin.length !== 4) return alert("PIN-код має складатися з 4 цифр!");
-    socket.emit('login', { nick, pin }, (res) => {
+    if (socket) socket.emit('login', { nick, pin }, (res) => {
         if (res && res.success) {
             currentUser = res.user;
             localStorage.setItem('poltavaUser', JSON.stringify({ nick, pin }));
             updateProfileUI();
             alert(res.msg);
-        } else {
-            alert(res.msg || "Помилка авторизації");
-        }
+        } else alert(res.msg || "Помилка авторизації");
     });
 }
 
 function buyItemAction(itemId) {
     if (!currentUser) return alert("Спершу увійди в Профіль!");
-    socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
-        if (res.success) {
-            currentUser = res.user;
-            updateProfileUI();
-            alert("🎉 Успішно куплено!");
+    if (socket) socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+        if (res && res.success) {
+            currentUser = res.user; updateProfileUI(); alert("🎉 Успішно куплено!");
         } else alert(res.msg);
     });
 }
 
 function equipItemAction(itemId) {
-    socket.emit('equipToken', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
-        if (res.success) { currentUser = res.user; updateProfileUI(); }
+    if (socket) socket.emit('equipToken', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+        if (res && res.success) { currentUser = res.user; updateProfileUI(); }
     });
 }
 
-// === ЛОГІКА ТАБІВ ТА МЕНЮ ===
+// === СИСТЕМА ТАБІВ ТА МЕНЮ ===
 
 function switchTab(tabId) {
-    document.querySelectorAll('.tab-content').forEach(tab => {
+    const contents = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-btn');
+    
+    contents.forEach(tab => {
         tab.style.display = 'none';
         tab.classList.remove('active-tab');
     });
-    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    buttons.forEach(btn => btn.classList.remove('active'));
 
-    let activeTab = document.getElementById(tabId);
-    if (activeTab) activeTab.style.display = 'block';
+    const activeTab = document.getElementById(tabId);
+    if (activeTab) {
+        activeTab.style.display = 'block';
+        activeTab.classList.add('active-tab');
+    }
     
-    let activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
+    const activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
     if (activeBtn) activeBtn.classList.add('active');
 }
 
-// === ОНЛАЙН: ЛОГІКА ЛОБІ ===
+// === ОНЛАЙН ЛОГІКА ТА ЛОБІ ===
 
 function updateLobbyUI() {
     if (!currentLobby) return;
@@ -2003,17 +1996,28 @@ function leaveLobby() {
 }
 
 function startOnlineGame() {
-    if (currentLobby) socket.emit('startGame', currentLobby.id);
+    if (socket && currentLobby) socket.emit('startGame', currentLobby.id);
 }
 
-// === АВТО-ЛОГІН ПРИ ЗАВАНТАЖЕННІ ===
+function searchFriend() {
+    alert("Функція друзів у розробці!");
+}
+
+// === ЗАПУСК ПРИ ЗАВАНТАЖЕННІ ===
+
 if (socket) {
     socket.on('connect', () => {
-        let saved = JSON.parse(localStorage.getItem('poltavaUser'));
+        let saved = localStorage.getItem('poltavaUser');
         if (saved) {
-            socket.emit('login', { nick: saved.nick, pin: saved.pin }, (res) => {
+            let data = JSON.parse(saved);
+            socket.emit('login', { nick: data.nick, pin: data.pin }, (res) => {
                 if (res && res.success) { currentUser = res.user; updateProfileUI(); }
             });
         }
     });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    switchTab('tab-newgame');
+    updateProfileUI();
+});
