@@ -215,3 +215,29 @@ function equipItemAction(itemId) {
 function searchFriend() {
     alert("Функція друзів у розробці!");
 }
+
+// === ІНІЦІАЛІЗАЦІЯ ПРИ ЗАВАНТАЖЕННІ СТОРІНКИ ===
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Відкриваємо вкладку локальної гри
+    switchTab('tab-newgame');
+    
+    // 2. ГЕНЕРУЄМО ПОЛЯ ДЛЯ ГРАВЦІВ (Це фіксить помилку 'checked'!)
+    generatePlayerInputs();
+    
+    // 3. Налаштовуємо гучність
+    updateVolume();
+    
+    // 4. Робимо тихий авто-логін, якщо є збережений пароль
+    let saved = localStorage.getItem('poltavaUser');
+    if (saved && socket) {
+        let data = JSON.parse(saved);
+        socket.emit('login', { nick: data.nick, pin: data.pin }, (res) => {
+            if (res && res.success) { 
+                currentUser = res.user; 
+            }
+            updateProfileUI();
+        });
+    } else {
+        updateProfileUI();
+    }
+});
