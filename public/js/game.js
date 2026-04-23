@@ -1762,6 +1762,10 @@ function processDebts() {
     let debtor = players.find(p => p.money < 0 && !p.isBankrupt);
     if (debtor) {
         debtor.debtMode = true; 
+        
+        // ФІКС: Кажемо грі, що кубики вже впали, щоб РОЗБЛОКУВАТИ КНОПКИ
+        isRolling = false; 
+        
         updateUI();
         
         if (!debtAlertShown) {
