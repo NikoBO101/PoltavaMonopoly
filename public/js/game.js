@@ -2182,3 +2182,31 @@ function switchTab(tabId) {
 document.addEventListener('DOMContentLoaded', () => {
     switchTab('tab-local');
 });
+// === АВТОМАТИЧНИЙ ЛОГІН ТА СИНХРОНІЗАЦІЯ ГАЛУШОК ===
+function autoLogin() {
+    let savedUser = JSON.parse(localStorage.getItem('poltavaUser'));
+    
+    // Якщо в пам'яті є збережений нік і пін - тихо стукаємо на сервер
+    if (savedUser && savedUser.nick && savedUser.pin) {
+        if (socket && socket.connected) {
+            socket.emit('login', { nick: savedUser.nick, pin: savedUser.pin }, (res) => {
+                if (res && res.success) {
+                    currentUser = res.user; // Отримуємо всі свіжі дані (Галушки, Скіни)
+                    updateProfileUI(); // Оновлюємо Крамницю і Профіль
+                } else {
+                    // Якщо щось пішло не так (наприклад, видалили базу)
+                    currentUser = null;
+                    localStorage.removeItem('poltavaUser');
+                    updateProfileUI();
+                }
+            });
+        }
+    }
+}
+
+// Запускаємо авто-логін, щойно з'явився зв'язок із сервером
+if (socket) {
+    socket.on('connect', () => {
+        autoLogin();
+    });
+}
