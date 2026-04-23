@@ -1,9 +1,20 @@
 // === ОСНОВНА ІГРОВА ЛОГІКА ТА ПРАВИЛА (game.js) ===
 
+// --- 0. КЛІК ПО КУБИКУ (ФІКС КНОПКИ) ---
+function userClickedRoll() {
+    if (gameOver) return; // Якщо гра завершена - кубик не працює
+    if (isOnlineMode && typeof socket !== 'undefined' && socket && currentLobby) {
+        socket.emit('rollDice', currentLobby.id);
+    } else {
+        if (typeof startTurnLocal === "function") startTurnLocal();
+    }
+}
+
 // --- 1. СТАРТ ЛОКАЛЬНОЇ ГРИ ---
 function startLocalGame() {
     if(typeof unlockAudio === "function") unlockAudio();
     isOnlineMode = false; 
+    gameOver = false; // Скидаємо статус гри
     if(typeof changeRadio === "function") changeRadio(); 
     currentRound = 1; 
     jackpotAmount = 0;
@@ -53,6 +64,7 @@ function logMsg(msg) {
 }
 
 function handleLanding(index, p) {
+    if (gameOver) return;
     const cell = mapData[index]; 
     logMsg(`📍 <b>${p.name}</b> стає на <b>${cell.name.replace('<br>',' ')}</b>`);
     
@@ -124,7 +136,9 @@ function handleLanding(index, p) {
 }
 
 function processNextTurn(activePlayer) {
+    if (gameOver) return; // ФІКС: Якщо гра закінчена - стоп!
     if (processDebts()) return; 
+    
     if (isOnlineMode && activePlayer.id === myMultiplayerId && typeof forceSyncState === "function") forceSyncState();
     
     if (lastRollWasDouble && !activePlayer.inJail && !activePlayer.isBankrupt) { 
@@ -138,10 +152,16 @@ function processNextTurn(activePlayer) {
     
     isRolling = false; updateUI();
     if (isOnlineMode && activePlayer.id === myMultiplayerId && typeof forceSyncState === "function") forceSyncState();
-    if (!isOnlineMode && players[turn].isBot && !players[turn].isBankrupt) { setTimeout(() => { if(typeof userClickedRoll==="function") userClickedRoll(); else startTurnLocal(); }, 1500); }
+    
+    if (!isOnlineMode && players[turn].isBot && !players[turn].isBankrupt) { 
+        setTimeout(() => { 
+            if (gameOver) return; // ФІКС: Бот не грає, якщо гра завершена
+            userClickedRoll(); 
+        }, 1500); 
+    }
 }
 
-// --- 3. ОБРОБКА ДІЙ (КУПІВЛЯ, ОРЕНДА) ---
+// --- 3. ОБРОБКА ДІЙ ---
 function confirmAction(type, idx, val) { 
     closeModal(); let p = players[turn]; 
     if (isOnlineMode) { socket.emit('playerAction', currentLobby.id, { type: type, idx: idx, val: val }); } 
@@ -149,6 +169,7 @@ function confirmAction(type, idx, val) {
 }
 
 function executeAction(p, type, idx, val) {
+    if (gameOver) return;
     if (type === 'buy') { 
         p.money -= val; properties[idx] = { owner: p.id, houses: 0, isMortgaged: false }; 
         logMsgLocal(`🏙️ <b><span style="color:${p.color}">${p.name}</span></b> купує <b>${mapData[idx].name.replace('<br>',' ')}</b>!`); 
@@ -226,13 +247,20 @@ function forceBankrupt() {
     let tokenEl = document.getElementById(`token-${p.id}`); if (tokenEl) tokenEl.remove();
     for (let i in properties) { if (properties[i].owner === p.id) { delete properties[i]; document.getElementById(`cell-${i}`).style.borderColor = '#cbd5e1'; document.getElementById(`owner-${i}`).style.backgroundColor = 'transparent'; } }
     logMsg(`💀 <b>${p.name}</b> БАНКРУТ!`); playSound('sfx-bankrupt'); closeModal(); updateUI(); 
+    
     let active = players.filter(pl => !pl.isBankrupt);
-    if (active.length === 1) { openModal("🏆 ЗАВЕРШЕНО!", `<h1 style="color:${active[0].color};">${active[0].name} ПЕРЕМІГ!</h1>`, `<button class="btn-green" onclick="window.location.reload()">Нова гра</button>`); if(typeof broadcastState === "function") broadcastState(); return; }
+    if (active.length === 1) { 
+        gameOver = true; // ФІКС: ГРА ЗУПИНЕНА
+        openModal("🏆 ЗАВЕРШЕНО!", `<h1 style="color:${active[0].color};">${active[0].name} ПЕРЕМІГ!</h1>`, `<button class="btn-green" onclick="window.location.reload()">Нова гра</button>`); 
+        if(typeof broadcastState === "function") broadcastState(); 
+        return; 
+    }
     if (!processDebts()) processNextTurn(p); 
 }
 
 // --- 5. КАРТКИ ШАНСУ ---
 function applyCard() {
+    if (gameOver) return;
     let p = players[turn]; let c = window.currentCard; closeModal();
     let cardMsg = `🃏 <b><span style="color:${p.color}">${p.name}</span></b>: ${c.text}`;
     if (isOnlineMode) { socket.emit('playerAction', currentLobby.id, { type: 'chat', val: cardMsg }); } else { logMsgLocal(cardMsg); }
@@ -366,9 +394,21 @@ function openAuctionModal() {
 
 // --- 8. БОТИ ---
 function checkBotTurn() {
-    if (isOnlineMode || isRolling) return; let p = players[turn];
-    if (p && p.isBot && !p.isBankrupt && !p.debtMode) { setTimeout(() => { if (document.getElementById('modal-overlay').style.display === 'none') { botPreRollActions(p); let rollBtn = document.getElementById('roll-btn'); if (rollBtn && !rollBtn.disabled) { if(typeof userClickedRoll==="function") userClickedRoll(); else startTurnLocal(); } else if (rollBtn && rollBtn.disabled) { startTurnLocal(); } } }, 1500); }
+    if (gameOver || isOnlineMode || isRolling) return; 
+    let p = players[turn];
+    if (p && p.isBot && !p.isBankrupt && !p.debtMode) { 
+        setTimeout(() => { 
+            if (gameOver) return;
+            if (document.getElementById('modal-overlay').style.display === 'none') { 
+                botPreRollActions(p); 
+                let rollBtn = document.getElementById('roll-btn'); 
+                if (rollBtn && !rollBtn.disabled) { userClickedRoll(); } 
+                else if (rollBtn && rollBtn.disabled) { startTurnLocal(); } 
+            } 
+        }, 1500); 
+    }
 }
+
 function botPreRollActions(p) {
     if (p.money < 1500) return; let colorsOwned = {};
     for (let i in properties) { if (properties[i].owner === p.id) { let g = mapData[i].group; colorsOwned[g] = (colorsOwned[g] || 0) + 1; } }
