@@ -467,6 +467,13 @@ function startLocalGame() {
     players = [];
     for (let i = 0; i < c; i++) {
         let isBotChecked = document.getElementById(`p${i}-isbot`).checked;
+        
+        // Визначаємо фішку: якщо це Гравець 1 (ти) і ти залогінений — беремо твою фішку!
+        let pToken = 'token_default';
+        if (i === 0 && currentUser && currentUser.equippedToken) {
+            pToken = currentUser.equippedToken;
+        }
+
         players.push({ 
             id: i, 
             name: document.getElementById(`p${i}-name`).value, 
@@ -485,7 +492,8 @@ function startLocalGame() {
             reverseMove: false, 
             portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 }, 
             stockHistory: [], 
-            debtMode: false 
+            debtMode: false,
+            equippedToken: pToken // <- Ось тут ми передаємо фішку в гру!
         });
     }
     
@@ -559,10 +567,28 @@ function initBoard() {
         const token = document.createElement('div'); 
         token.id = `token-${p.id}`; 
         token.className = 'pawn'; 
-        token.style.backgroundColor = p.color; 
+
+        // Перевіряємо, який скін вдягнений у гравця
+        if (p.equippedToken === 'token_gold') {
+            token.style.backgroundColor = '#f59e0b';
+            token.style.border = '2px solid #fff';
+            token.style.boxShadow = '0 0 10px #f59e0b';
+        } else if (p.equippedToken === 'token_bogdan') {
+            token.style.background = 'transparent';
+            token.style.border = 'none';
+            token.style.boxShadow = 'none';
+            token.innerHTML = '<div style="font-size:24px; line-height:1; transform: translateY(-5px);">🚐</div>';
+        } else if (p.equippedToken === 'token_tank') {
+            token.style.background = 'transparent';
+            token.style.border = 'none';
+            token.style.boxShadow = 'none';
+            token.innerHTML = '<div style="font-size:24px; line-height:1; transform: translateY(-5px);">🚜</div>';
+        } else {
+            token.style.backgroundColor = p.color; // Звичайна фішка
+        }
+
         document.getElementById('tokens-0').appendChild(token); 
     });
-}
 
 function updatePropertyColors() {
     for (let i = 0; i < 40; i++) {
