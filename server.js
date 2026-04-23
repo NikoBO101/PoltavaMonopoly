@@ -9,7 +9,6 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // === ПІДКЛЮЧЕННЯ БАЗИ ДАНИХ ===
-// Переконайся, що тут твоє посилання або змінна оточення Render
 const uri = process.env.MONGODB_URI; 
 const client = new MongoClient(uri);
 let usersCollection;
@@ -57,12 +56,11 @@ io.on('connection', (socket) => {
 
             if (user) {
                 if (user.pin === pin) {
-                    // АВТО-ОНОВЛЕННЯ СТАРИХ АКАУНТІВ (додаємо Галушки та Інвентар)
                     let needsUpdate = false;
                     let updateData = {};
                     
                     if (user.galushky === undefined) {
-                        updateData.galushky = user.coins || 100; // Конвертуємо старі коїни в галушки
+                        updateData.galushky = user.coins || 100; 
                         user.galushky = updateData.galushky;
                         needsUpdate = true;
                     }
@@ -91,7 +89,7 @@ io.on('connection', (socket) => {
                     pin: pin, 
                     wins: 0, 
                     activeTitle: "Новачок", 
-                    galushky: 100, // Тепер стартовий капітал - Галушки!
+                    galushky: 100,
                     titles: ["Новачок"],
                     inventory: ['token_default'],
                     equippedToken: 'token_default',
@@ -137,7 +135,6 @@ io.on('connection', (socket) => {
                 }
             );
 
-            // Оновлюємо дані для відправки клієнту
             user.galushky -= item.price;
             user.inventory.push(itemId);
 
@@ -145,6 +142,22 @@ io.on('connection', (socket) => {
         } catch (err) {
             console.error("Помилка покупки:", err);
             callback({ success: false, msg: "Помилка сервера під час покупки." });
+        }
+    });
+
+    // === ВИКОРИСТАННЯ КОРУПЦІЇ (ЗНЯТТЯ ГАЛУШОК) ===
+    socket.on('useCorruption', async (data, callback) => {
+        const { nick, pin, cost, serviceName } = data;
+        try {
+            let user = await usersCollection.findOne({ nick: { $regex: new RegExp(`^${nick}$`, "i") } });
+            if (!user || user.pin !== pin) return callback({ success: false, msg: "Помилка авторизації!" });
+            if ((user.galushky || 0) < cost) return callback({ success: false, msg: `Не вистачає Галушок! Треба ${cost} 🥟` });
+
+            await usersCollection.updateOne({ _id: user._id }, { $inc: { galushky: -cost } });
+            user.galushky -= cost;
+            callback({ success: true, user: user, msg: `✅ Послуга "${serviceName}" активована!` });
+        } catch (err) {
+            callback({ success: false, msg: "Помилка сервера." });
         }
     });
 
