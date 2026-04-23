@@ -39,3 +39,4 @@ const dotL = {
 };
 const playerColors = ['#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#10b981', '#ec4899'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+var gameOver = false; // Прапорець для зупинки гри
