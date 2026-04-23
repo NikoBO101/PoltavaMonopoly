@@ -175,7 +175,7 @@ function executeAction(p, type, idx, val) {
     if (type === 'buy') { 
         p.money -= val; properties[idx] = { owner: p.id, houses: 0, isMortgaged: false }; 
         
-        // 🔥 ФІКС: Розширені рандомні фрази (з чорним гумором і схемами)
+        // Фрази для купівлі з чорним гумором
         let phrases = [
             `тепер кришує`, 
             `жорстко віджав собі`, 
@@ -187,12 +187,7 @@ function executeAction(p, type, idx, val) {
             `записав на улюбленого кота`,
             `відмив купу брудних грошей через`,
             `відібрав за старі карткові борги`,
-            `шантажем змусив мера переписати на себе`,
-            `купив, поки попередній власник "раптово зник у лісі",`,
             `зробив пропозицію, від якої неможливо відмовитись, і забрав`,
-            `виміняв на каністру бензину і мішок цукру`,
-            `через підставну фірму на Кіпрі придбав`,
-            `забрав собі, бо "а що вони мені зроблять?", і тепер має`,
             `виграв у нарди в місцевого авторитета`
         ];
         let randPhrase = phrases[Math.floor(Math.random() * phrases.length)];
@@ -202,6 +197,52 @@ function executeAction(p, type, idx, val) {
         playSound('sfx-spend'); 
         processNextTurn(p); 
     } 
+    else if (type === 'rent') { 
+        if (typeof kumActive !== 'undefined' && kumActive) { 
+            logMsg(`😎 <b>${p.name}</b> просто кивнув власнику. Кум все вирішив, оренду не платимо!`); 
+            kumActive = false; 
+            processNextTurn(p); 
+            return; 
+        }
+        const owner = players.find(pl => pl.id === properties[idx].owner); 
+        p.money -= val; owner.money += val; 
+        
+        let rentPhrases = [
+            `заслав долю`, 
+            `з болем у серці віддав гроші`, 
+            `нехотя відстібнув кеш`, 
+            `повернув борг за пиво`
+        ];
+        let randRent = rentPhrases[Math.floor(Math.random() * rentPhrases.length)];
+        
+        logMsgLocal(`💸 <b><span style="color:${p.color}">${p.name}</span></b> ${randRent} <b><span style="color:${owner.color}">${owner.name}</span></b> (i₴${val}).`); 
+        
+        if (['pink', 'green', 'orange'].includes(mapData[idx].group)) stocks.RTL.pool += Math.ceil(val * 0.1); 
+        if (['yellow'].includes(mapData[idx].group)) stocks.PST.pool += Math.ceil(val * 0.1); 
+        if (['station'].includes(mapData[idx].group)) stocks.TRN.pool += Math.ceil(val * 0.1); 
+        if (mapData[idx].type === 'utility') stocks.GOV.pool += Math.ceil(val * 0.2); 
+        playSound('sfx-spend'); 
+        processNextTurn(p); 
+    }
+    else if (type === 'tax') { payTax(val); }
+    else if (type === 'pass') { logMsgLocal(`<b>${p.name}</b> зажав гроші і відмовився від покупки.`); processNextTurn(p); } 
+    else if (type === 'think') { logMsgLocal(`🤔 <span style="color:${p.color}">${p.name}</span> чеше потилицю, розглядаючи <b>${val}</b>...`); } 
+    else if (type === 'chat') { logMsgLocal(`<span style="color:${p.color}"><b>${p.name}:</b></span> ${val}`); }
+    else if (type === 'auction_start') { window.auctionData = { idx: idx, highestBid: val, highestBidder: -1 }; logMsgLocal(`📢 Почався кіпіш і аукціон на <b>${mapData[idx].name.replace('<br>',' ')}</b>!`); openAuctionModal(); return; }
+    else if (type === 'auction_bid') { window.auctionData.highestBid = val; window.auctionData.highestBidder = p.id; playSound('sfx-step'); if(document.getElementById('auc-bid')) { document.getElementById('auc-bid').innerText = `i₴${val}`; document.getElementById('auc-leader').innerText = p.name; } else { openAuctionModal(); } return; }
+    else if (type === 'auction_pass') { logMsgLocal(`${p.name} каже "Я пас, я ж не депутат".`); return; }
+    else if (type === 'auction_finish') { 
+        if (window.auctionData.highestBidder === -1) { logMsgLocal(`Аукціон завершено. Ділянка залишилась нічиєю.`); } 
+        else { 
+            let winner = players.find(x => x.id === window.auctionData.highestBidder); winner.money -= window.auctionData.highestBid; 
+            properties[window.auctionData.idx] = { owner: winner.id, houses: 0, isMortgaged: false }; 
+            logMsgLocal(`🔨 <b>${winner.name}</b> з криками вирвав на аукціоні бізнес за i₴${window.auctionData.highestBid}!`); 
+            playSound('sfx-earn'); document.getElementById(`cell-${window.auctionData.idx}`).style.border = `3px solid ${winner.color}`; 
+        } 
+        processNextTurn(players[turn]); return; 
+    }
+    if (isOnlineMode && p.id === myMultiplayerId && type !== 'chat' && type !== 'think') { if(typeof forceSyncState === "function") forceSyncState(); }
+}
     else if (type === 'rent') { 
         if (typeof kumActive !== 'undefined' && kumActive) { 
             logMsg(`😎 <b>${p.name}</b> просто кивнув власнику. Кум все вирішив, оренду не платимо!`); 
