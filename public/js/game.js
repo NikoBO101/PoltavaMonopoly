@@ -1874,8 +1874,8 @@ function updateProfileUI() {
     let profileInfo = document.getElementById('profile-info');
     let shopWarning = document.getElementById('shop-auth-warning');
     let shopContainer = document.getElementById('shop-container');
-    let friendsWarning = document.getElementById('friends-auth-warning'); // НОВЕ
-    let friendsContainer = document.getElementById('friends-container'); // НОВЕ
+    let friendsWarning = document.getElementById('friends-auth-warning');
+    let friendsContainer = document.getElementById('friends-container');
     let gameHeader = document.getElementById('game-header');
 
     if (currentUser) {
@@ -1883,8 +1883,8 @@ function updateProfileUI() {
         if (profileInfo) profileInfo.style.display = 'block';
         if (shopWarning) shopWarning.style.display = 'none';
         if (shopContainer) shopContainer.style.display = 'block';
-        if (friendsWarning) friendsWarning.style.display = 'none'; // Ховаємо попередження
-        if (friendsContainer) friendsContainer.style.display = 'block'; // Показуємо друзів
+        if (friendsWarning) friendsWarning.style.display = 'none';
+        if (friendsContainer) friendsContainer.style.display = 'block';
         if (gameHeader) gameHeader.style.display = 'flex';
 
         if (document.getElementById('header-galushky')) document.getElementById('header-galushky').innerText = currentUser.galushky || 0;
@@ -1892,6 +1892,7 @@ function updateProfileUI() {
         if (document.getElementById('user-display-name')) document.getElementById('user-display-name').innerText = currentUser.nick;
         if (document.getElementById('user-wins')) document.getElementById('user-wins').innerText = currentUser.wins || 0;
         if (document.getElementById('user-coins')) document.getElementById('user-coins').innerText = (currentUser.galushky || 0) + " 🥟";
+        if (document.getElementById('shop-balance')) document.getElementById('shop-balance').innerText = (currentUser.galushky || 0) + " 🥟";
 
         let items = ['token_gold', 'token_bogdan', 'token_tank'];
         items.forEach(item => {
@@ -1911,14 +1912,13 @@ function updateProfileUI() {
                 }
             }
         });
-
     } else {
         if (authForm) authForm.style.display = 'block';
         if (profileInfo) profileInfo.style.display = 'none';
         if (shopWarning) shopWarning.style.display = 'block';
         if (shopContainer) shopContainer.style.display = 'none';
-        if (friendsWarning) friendsWarning.style.display = 'block'; // Показуємо попередження
-        if (friendsContainer) friendsContainer.style.display = 'none'; // Ховаємо друзів
+        if (friendsWarning) friendsWarning.style.display = 'block';
+        if (friendsContainer) friendsContainer.style.display = 'none';
         if (gameHeader) gameHeader.style.display = 'none';
     }
 }
@@ -1926,248 +1926,57 @@ function updateProfileUI() {
 function loginAction() {
     let nick = document.getElementById('auth-nick').value.trim();
     let pin = document.getElementById('auth-pin').value.trim();
-    
     if (!nick || nick.length < 3) return alert("Нікнейм має бути мінімум 3 символи!");
-    if (!pin || pin.length !== 4 || isNaN(pin)) return alert("PIN-код має складатися з 4 цифр!");
-    if (!socket || !socket.connected) return alert("Помилка: Немає зв'язку з сервером.");
-
-    socket.emit('login', { nick: nick, pin: pin }, (response) => {
-        if (response && response.success) {
-            currentUser = response.user;
-            localStorage.setItem('poltavaUser', JSON.stringify({ nick: nick, pin: pin }));
+    if (!pin || pin.length !== 4) return alert("PIN-код має складатися з 4 цифр!");
+    socket.emit('login', { nick, pin }, (res) => {
+        if (res && res.success) {
+            currentUser = res.user;
+            localStorage.setItem('poltavaUser', JSON.stringify({ nick, pin }));
             updateProfileUI();
-            alert(response.msg);
+            alert(res.msg);
         } else {
-            alert(response.msg || "Помилка авторизації");
+            alert(res.msg || "Помилка авторизації");
         }
     });
 }
 
-function logoutAction() {
-    if(confirm("Дійсно хочеш вийти з акаунту?")) {
-        currentUser = null;
-        localStorage.removeItem('poltavaUser');
-        updateProfileUI();
-        location.reload(); // Перезавантажуємо сторінку для надійності
-    }
-}
-
-// === КУПІВЛЯ ТОВАРУ (КЛІЄНТСЬКА ЧАСТИНА) ===
 function buyItemAction(itemId) {
     if (!currentUser) return alert("Спершу увійди в Профіль!");
-    if (!socket || !socket.connected) return alert("Немає зв'язку з сервером!");
-    
-    if (confirm("Точно хочеш купити цей предмет за Галушки?")) {
-        socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
-            if (res && res.success) {
-                currentUser = res.user;
-                updateProfileUI(); 
-                alert("🎉 " + res.msg);
-            } else {
-                alert("❌ " + (res ? res.msg : "Помилка покупки"));
-            }
-        });
-    }
-}
-
-function equipItemAction(itemId) {
-    if (!socket || !socket.connected) return;
-    socket.emit('equipToken', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+    socket.emit('buyItem', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
         if (res.success) {
             currentUser = res.user;
             updateProfileUI();
-        } else {
-            alert("❌ " + res.msg);
-        }
+            alert("🎉 Успішно куплено!");
+        } else alert(res.msg);
     });
 }
-// === СИСТЕМА КОРУПЦІЇ ===
-var kumActive = false; 
-window.corruptionMode = null; 
 
-function openCorruptionMenu() {
-    if (!currentUser) return alert("Треба увійти в профіль, щоб використовувати зв'язки!");
-    if (!isMyTurn()) return alert("Зараз не твій хід!");
-    
-    // ПЕРЕВІРКА НА ЛІМІТ (1 РАЗ ЗА ГРУ)
-    if (players[turn].corruptionUsed) return alert("❌ Ти вже використав свої зв'язки у цій грі! Корупція доступна лише 1 раз.");
-
-    let html = `
-        <p style="font-size:12px; color:#94a3b8; margin-bottom:15px;">Тіньові послуги. Доступно <b>1 раз</b> на гру!</p>
-        
-        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; border:1px solid #ef4444; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="text-align:left;">
-                <b style="color:#fca5a5;">📞 Дзвінок Куму</b><br>
-                <span style="font-size:11px; color:#94a3b8;">Не плати оренду 1 раз</span>
-            </div>
-            <button class="btn-red" style="width:80px; padding:5px;" onclick="buyKum()">150 🥟</button>
-        </div>
-
-        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; border:1px solid #10b981; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
-            <div style="text-align:left;">
-                <b style="color:#6ee7b7;">🚁 Блатне Таксі</b><br>
-                <span style="font-size:11px; color:#94a3b8;">Переліт на будь-яку клітинку</span>
-            </div>
-            <button class="btn-green" style="width:80px; padding:5px;" onclick="startCorruptionSelection('teleport')">100 🥟</button>
-        </div>
-
-        <div style="background:rgba(0,0,0,0.3); padding:10px; border-radius:10px; border:1px solid #3b82f6; display:flex; justify-content:space-between; align-items:center;">
-            <div style="text-align:left;">
-                <b style="color:#93c5fd;">🚜 Рейдерство</b><br>
-                <span style="font-size:11px; color:#94a3b8;">Забери чужий бізнес за х2 ціни</span>
-            </div>
-            <button class="btn-blue" style="width:80px; padding:5px;" onclick="startCorruptionSelection('raider')">300 🥟</button>
-        </div>
-    `;
-    openModal("🕵️ ТІНЬОВИЙ РИНОК", html, `<button class="btn-blue" onclick="closeModal()">Закрити</button>`);
+function equipItemAction(itemId) {
+    socket.emit('equipToken', { nick: currentUser.nick, pin: currentUser.pin, itemId: itemId }, (res) => {
+        if (res.success) { currentUser = res.user; updateProfileUI(); }
+    });
 }
 
-// 1. ДЗВІНОК КУМУ
-function buyKum() {
-    if (confirm("Точно витратити 150 🥟 на Дзвінок Куму?")) {
-        socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: 150, serviceName: 'kum' }, (res) => {
-            if (res.success) {
-                currentUser = res.user; updateProfileUI(); closeModal();
-                kumActive = true;
-                players[turn].corruptionUsed = true; // Записуємо, що гравець використав ліміт
-                logMsg(`🕵️ <b>${players[turn].name}</b> "подзвонив куму". Наступна оренда безкоштовна!`);
-                updateUI(); broadcastState();
-            } else alert(res.msg);
-        });
-    }
-}
+// === ЛОГІКА ТАБІВ ТА МЕНЮ ===
 
-// АКТИВАЦІЯ РЕЖИМУ ВИБОРУ НА ПОЛІ
-function startCorruptionSelection(mode) {
-    window.corruptionMode = mode;
-    closeModal();
-    
-    let msg = mode === 'raider' ? "🚜 Клікніть на ЧУЖИЙ БІЗНЕС на полі!" : "🚁 Клікніть на БУДЬ-ЯКУ клітинку!";
-    
-    // Створюємо банер підказки зверху екрану
-    let banner = document.createElement('div');
-    banner.id = 'corruption-banner';
-    banner.innerHTML = `<b>${msg}</b> <button onclick="cancelCorruption()" style="margin-left:15px; padding:6px 12px; background:#ef4444; color:#fff; border:none; border-radius:5px; cursor:pointer;">Відміна</button>`;
-    banner.style.cssText = "position:fixed; top:80px; left:50%; transform:translateX(-50%); background:rgba(245,158,11,0.95); color:#000; padding:10px 20px; border-radius:10px; z-index:10000; box-shadow:0 0 15px rgba(0,0,0,0.5); border:2px solid #fff; font-size:16px;";
-    document.body.appendChild(banner);
-}
-
-function cancelCorruption() {
-    window.corruptionMode = null;
-    let banner = document.getElementById('corruption-banner');
-    if (banner) banner.remove();
-}
-
-// ПЕРЕХОПЛЕННЯ КЛІКІВ ПО ПОЛЮ
-const originalShowPropertyInfo = showPropertyInfo;
-showPropertyInfo = function(index) {
-    if (window.corruptionMode === 'raider') {
-        confirmRaider(index);
-        return;
-    }
-    if (window.corruptionMode === 'teleport') {
-        confirmTeleport(index);
-        return;
-    }
-    originalShowPropertyInfo(index); // Якщо корупція не активна - показуємо звичайну інфу
-};
-
-// 2. ЛОГІКА РЕЙДЕРСТВА
-function confirmRaider(idx) {
-    let cell = mapData[idx];
-    let prop = properties[idx];
-    
-    if (!prop || !cell.price || prop.houses > 0 || prop.owner === players[turn].id) {
-        return alert("❌ Неможливо захопити! Оберіть чужий бізнес без будинків.");
-    }
-    
-    let raiderPrice = cell.price * 2;
-    if (players[turn].money < raiderPrice) return alert(`Не вистачає готівки (i₴)! Потрібно i₴${raiderPrice}.`);
-    
-    if (confirm(`Захопити ${cell.name.replace('<br>',' ')}?\nСпишеться: 300 🥟 та i₴${raiderPrice}`)) {
-        socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: 300, serviceName: 'raider' }, (res) => {
-            if (res.success) {
-                currentUser = res.user; updateProfileUI(); cancelCorruption();
-                
-                players[turn].money -= raiderPrice;
-                let oldOwner = players.find(p => p.id === prop.owner);
-                if (oldOwner) oldOwner.money += raiderPrice;
-                
-                properties[idx] = { owner: players[turn].id, houses: 0, isMortgaged: false };
-                players[turn].corruptionUsed = true; // Ліміт використано
-                
-                logMsg(`🚜 <b>РЕЙДЕРСТВО!</b> <b>${players[turn].name}</b> силоміць забрав <b>${cell.name.replace('<br>',' ')}</b> у <b>${oldOwner.name}</b>!`);
-                playSound('sfx-bankrupt');
-                updateUI(); broadcastState();
-            } else alert(res.msg);
-        });
-    }
-}
-
-// 3. ЛОГІКА ТЕЛЕПОРТУ (Блатне Таксі)
-function confirmTeleport(idx) {
-    let cell = mapData[idx];
-    
-    if (confirm(`Переміститися на ${cell.name.replace('<br>',' ')}?\nСпишеться: 100 🥟`)) {
-        socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: 100, serviceName: 'teleport' }, (res) => {
-            if (res.success) {
-                currentUser = res.user; updateProfileUI(); cancelCorruption();
-                
-                let p = players[turn];
-                p.pos = idx;
-                p.corruptionUsed = true; // Ліміт використано
-                
-                logMsg(`🚁 <b>${p.name}</b> викликав Блатне Таксі і перелетів на <b>${cell.name.replace('<br>',' ')}</b>!`);
-                
-                // Переміщуємо фішку візуально
-                document.getElementById(`tokens-${idx}`).appendChild(document.getElementById(`token-${p.id}`));
-                playSound('sfx-step');
-                
-                // Обробляємо зупинку (оренда, покупка, шанс)
-                setTimeout(() => handleLanding(idx, p), 500);
-                
-                updateUI(); broadcastState();
-            } else alert(res.msg);
-        });
-    }
-}
-// === ЛОГІКА ПЕРЕМИКАННЯ ВНАСЛІДОК НАТИСКАННЯ В МЕНЮ ===
-// === ЛОГІКА ПЕРЕМИКАННЯ ВКЛАДОК ===
 function switchTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.style.display = 'none';
         tab.classList.remove('active-tab');
     });
-    
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.remove('active-btn');
-        btn.style.background = 'transparent'; 
-    });
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
 
     let activeTab = document.getElementById(tabId);
-    if (activeTab) {
-        activeTab.style.display = 'block';
-        activeTab.classList.add('active-tab');
-    }
+    if (activeTab) activeTab.style.display = 'block';
     
     let activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
-    if (activeBtn) {
-        activeBtn.classList.add('active-btn');
-        activeBtn.style.background = 'rgba(59, 130, 246, 0.2)'; 
-        activeBtn.style.borderBottom = '3px solid #3b82f6';
-    }
+    if (activeBtn) activeBtn.classList.add('active');
 }
 
-// Запуск при завантаженні
-document.addEventListener('DOMContentLoaded', () => {
-    switchTab('tab-newgame');
-    generatePlayerInputs();
-});
-
 // === ОНЛАЙН: ЛОГІКА ЛОБІ ===
+
 function updateLobbyUI() {
     if (!currentLobby) return;
-    
     const elName = document.getElementById('lobby-room-name');
     const elCode = document.getElementById('lobby-room-code');
     const elList = document.getElementById('lobby-players-list');
@@ -2175,16 +1984,14 @@ function updateLobbyUI() {
 
     if (elName) elName.innerText = currentLobby.name;
     if (elCode) elCode.innerText = currentLobby.id;
-    
     if (elList) {
         elList.innerHTML = '';
         currentLobby.players.forEach(p => {
-            const li = document.createElement('li');
-            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color: ${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
+            let li = document.createElement('li');
+            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color:${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
             elList.appendChild(li);
         });
     }
-
     if (elStartBtn) {
         const isHost = currentLobby.players.find(p => p.id === socket.id && p.isHost);
         elStartBtn.style.display = (isHost && currentLobby.players.length >= 1) ? 'block' : 'none';
@@ -2192,24 +1999,20 @@ function updateLobbyUI() {
 }
 
 function leaveLobby() {
-    if(confirm("Точно вийти з кімнати?")) {
-        location.reload(); 
-    }
+    if(confirm("Вийти з кімнати?")) location.reload();
 }
 
 function startOnlineGame() {
-    if (currentLobby) {
-        socket.emit('startGame', currentLobby.id);
-    }
+    if (currentLobby) socket.emit('startGame', currentLobby.id);
 }
 
-// Важливо: закриваємо блок if(socket), якщо він був відкритий зверху
+// === АВТО-ЛОГІН ПРИ ЗАВАНТАЖЕННІ ===
 if (socket) {
     socket.on('connect', () => {
-        let savedUser = JSON.parse(localStorage.getItem('poltavaUser'));
-        if (savedUser) {
-            socket.emit('login', { nick: savedUser.nick, pin: savedUser.pin }, (res) => {
-                if (res.success) { currentUser = res.user; updateProfileUI(); }
+        let saved = JSON.parse(localStorage.getItem('poltavaUser'));
+        if (saved) {
+            socket.emit('login', { nick: saved.nick, pin: saved.pin }, (res) => {
+                if (res && res.success) { currentUser = res.user; updateProfileUI(); }
             });
         }
     });
