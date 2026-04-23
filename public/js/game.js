@@ -1892,29 +1892,25 @@ function updateProfileUI() {
     let profileInfo = document.getElementById('profile-info');
     let shopWarning = document.getElementById('shop-auth-warning');
     let shopContainer = document.getElementById('shop-container');
-    let gameHeader = document.getElementById('game-header'); // Нова шапка
+    let friendsWarning = document.getElementById('friends-auth-warning'); // НОВЕ
+    let friendsContainer = document.getElementById('friends-container'); // НОВЕ
+    let gameHeader = document.getElementById('game-header');
 
     if (currentUser) {
         if (authForm) authForm.style.display = 'none';
         if (profileInfo) profileInfo.style.display = 'block';
         if (shopWarning) shopWarning.style.display = 'none';
         if (shopContainer) shopContainer.style.display = 'block';
-        if (gameHeader) gameHeader.style.display = 'flex'; // Показуємо шапку!
+        if (friendsWarning) friendsWarning.style.display = 'none'; // Ховаємо попередження
+        if (friendsContainer) friendsContainer.style.display = 'block'; // Показуємо друзів
+        if (gameHeader) gameHeader.style.display = 'flex';
 
-        // 1. Оновлюємо Шапку (Header) зверху екрана
         if (document.getElementById('header-galushky')) document.getElementById('header-galushky').innerText = currentUser.galushky || 0;
         if (document.getElementById('header-user-name')) document.getElementById('header-user-name').innerText = currentUser.nick;
-
-        // 2. Оновлюємо текст у самому Профілі
         if (document.getElementById('user-display-name')) document.getElementById('user-display-name').innerText = currentUser.nick;
         if (document.getElementById('user-wins')) document.getElementById('user-wins').innerText = currentUser.wins || 0;
-        if (document.getElementById('user-active-title')) document.getElementById('user-active-title').innerText = currentUser.activeTitle || "Новачок";
         if (document.getElementById('user-coins')) document.getElementById('user-coins').innerText = (currentUser.galushky || 0) + " 🥟";
 
-        // 3. Оновлюємо Крамницю
-        if (document.getElementById('shop-balance')) document.getElementById('shop-balance').innerText = (currentUser.galushky || 0) + ' 🥟';
-
-        // Кнопки "Вдягнути/Купити" для фішок
         let items = ['token_gold', 'token_bogdan', 'token_tank'];
         items.forEach(item => {
             let btnEquip = document.getElementById('equip-' + item);
@@ -1939,6 +1935,8 @@ function updateProfileUI() {
         if (profileInfo) profileInfo.style.display = 'none';
         if (shopWarning) shopWarning.style.display = 'block';
         if (shopContainer) shopContainer.style.display = 'none';
+        if (friendsWarning) friendsWarning.style.display = 'block'; // Показуємо попередження
+        if (friendsContainer) friendsContainer.style.display = 'none'; // Ховаємо друзів
         if (gameHeader) gameHeader.style.display = 'none';
     }
 }
