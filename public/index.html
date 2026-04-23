@@ -38,126 +38,172 @@
         
         <button id="return-game-btn" class="btn-green" style="display:none; width: 90%; max-width: 550px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 0 20px #10b981;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
 
-       <div class="menu-tabs">
-           <button class="tab-btn" onclick="switchTab('tab-shop')" style="color:#ef4444;">🛒 Крамниця</button>
-<button class="tab-btn" onclick="switchTab('tab-profile')" style="color:#a855f7;">👤 Профіль</button>
-            <button class="tab-btn active" onclick="switchTab('tab-newgame')">Локальна Гра</button>
-            <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6;">🌐 Онлайн</button>
-            <button class="tab-btn" onclick="switchTab('tab-rules')" style="color:#10b981;">📜 Правила</button>
-            <button class="tab-btn" onclick="switchTab('tab-settings')">⚙️ Налаштування</button>
-            <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b;">👑 Розробник</button>
-        </div>
-        <div id="tab-newgame" class="tab-content active">
-            <div class="setup-row">
-                <label>Гравців:</label>
-                <select id="player-count" onchange="generatePlayerInputs()">
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                    <option value="4" selected>4</option>
-                    <option value="5">5</option>
-                    <option value="6">6</option>
-                </select>
-            </div>
-            <div class="setup-row">
-                <label>Старт (i₴):</label>
-                <input type="number" id="start-money" value="15000" step="1000">
-            </div>
-            
-            <div class="player-inputs" id="player-names-container"></div>
-            
-            <button class="start-btn" onclick="startLocalGame()">🎮 ПОЧАТИ ГРУ</button>
-        </div>
+       <div id="main-menu" style="padding-top: 60px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+        <div class="menu-header">ЕКОНОМІКА ПОЛТАВИ</div>
+        <div class="menu-subheader">MULTIPLAYER EDITION</div>
 
-        <div id="tab-multiplayer" class="tab-content">
-            <div class="setup-row">
-                <label>Ваше Ім'я:</label>
-                <input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець">
-            </div>
+        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 12px; border-radius: 8px; margin: 15px auto; width: 90%; max-width: 550px; font-weight: bold; text-align: center; font-size: 14px; box-shadow: inset 0 0 10px rgba(239,68,68,0.2);">
+            ⚠️ УВАГА: На сервері ведуться технічні роботи. Деякі функції можуть не працювати.
+        </div>
+        
+        <button id="menu-music-toggle" class="btn-purple" style="width: 90%; max-width: 550px; margin-bottom: 10px; padding: 12px; font-size: 16px;" onclick="toggleMenuMusic()">🎵 Увімкнути музику меню</button>
+        <button id="return-game-btn" class="btn-green" style="display:none; width: 90%; max-width: 550px; margin-bottom: 20px; font-size: 18px; box-shadow: 0 0 20px #10b981;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
+
+        <div class="app-window" style="background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; border-radius: 15px; width: 95%; max-width: 600px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); margin-bottom: 30px;">
             
-            <div class="mp-section">
-                <h4 style="margin-top:0;">Створити Кімнату</h4>
-                <div class="setup-row">
-                    <input type="text" id="mp-room-name" placeholder="Назва кімнати">
-                    <input type="text" id="mp-room-pass" placeholder="Пароль (необ.)">
+            <div class="menu-tabs" style="display: flex; flex-wrap: wrap; background: #1e293b; border-bottom: 2px solid #334155;">
+                <button class="tab-btn active" onclick="switchTab('tab-newgame')" style="flex: 1 1 30%; padding: 10px 5px;">🎮 Гра</button>
+                <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6; flex: 1 1 30%; padding: 10px 5px;">🌐 Онлайн</button>
+                <button class="tab-btn" onclick="switchTab('tab-shop')" style="color:#ef4444; flex: 1 1 30%; padding: 10px 5px;">🛒 Крамниця</button>
+                <button class="tab-btn" onclick="switchTab('tab-profile')" style="color:#a855f7; flex: 1 1 30%; padding: 10px 5px;">👤 Профіль</button>
+                <button class="tab-btn" onclick="switchTab('tab-rules')" style="color:#10b981; flex: 1 1 30%; padding: 10px 5px;">📜 Правила</button>
+                <button class="tab-btn" onclick="switchTab('tab-settings')" style="flex: 1 1 30%; padding: 10px 5px;">⚙️ Налашт.</button>
+                <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b; flex: 1 1 30%; padding: 10px 5px;">👑 Автори</button>
+            </div>
+
+            <div style="padding: 20px; min-height: 350px;">
+                
+                <div id="tab-newgame" class="tab-content active">
+                    <div class="setup-row">
+                        <label>Гравців:</label>
+                        <select id="player-count" onchange="generatePlayerInputs()" style="width: 100%; padding: 8px; margin-top: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4" selected>4</option>
+                            <option value="5">5</option>
+                            <option value="6">6</option>
+                        </select>
+                    </div>
+                    <div class="setup-row" style="margin-top: 15px;">
+                        <label>Старт (i₴):</label>
+                        <input type="number" id="start-money" value="15000" step="1000" style="width: 100%; padding: 8px; margin-top: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                    </div>
+                    
+                    <div class="player-inputs" id="player-names-container"></div>
+                    
+                    <button class="start-btn btn-blue" onclick="startLocalGame()" style="margin-top: 20px; width: 100%; padding: 15px; font-size: 18px;">🎮 ПОЧАТИ ГРУ</button>
                 </div>
-                <button class="btn-green" onclick="createRoom()">Створити та Зайти</button>
-            </div>
-            
-            <div class="mp-section">
-                <h4>Доступні Кімнати</h4>
-                <div class="room-list" id="mp-room-list"></div>
-                <div class="setup-row" style="margin-top:10px;">
-                    <input type="text" id="mp-join-code" placeholder="Код кімнати">
-                    <input type="text" id="mp-join-pass" placeholder="Пароль">
+
+                <div id="tab-multiplayer" class="tab-content" style="display:none;">
+                    <div class="setup-row">
+                        <label>Ваше Ім'я:</label>
+                        <input type="text" id="mp-player-name" placeholder="Введіть нікнейм..." value="Гравець" style="width: 100%; padding: 8px; margin-top: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                    </div>
+                    
+                    <div class="mp-section" style="margin-top: 15px;">
+                        <h4 style="margin-top:0;">Створити Кімнату</h4>
+                        <div class="setup-row">
+                            <input type="text" id="mp-room-name" placeholder="Назва кімнати" style="width: 100%; padding: 8px; margin-bottom: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                            <input type="text" id="mp-room-pass" placeholder="Пароль (необ.)" style="width: 100%; padding: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        </div>
+                        <button class="btn-green" onclick="createRoom()" style="width: 100%; margin-top: 10px;">Створити та Зайти</button>
+                    </div>
+                    
+                    <div class="mp-section" style="margin-top: 15px;">
+                        <h4>Доступні Кімнати</h4>
+                        <div class="room-list" id="mp-room-list" style="margin-bottom: 10px; max-height: 150px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px;"></div>
+                        <div class="setup-row" style="margin-top:10px;">
+                            <input type="text" id="mp-join-code" placeholder="Код кімнати" style="width: 100%; padding: 8px; margin-bottom: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                            <input type="text" id="mp-join-pass" placeholder="Пароль" style="width: 100%; padding: 8px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        </div>
+                        <button class="btn-blue" onclick="joinRoomByCode()" style="width: 100%; margin-top: 10px;">Приєднатися</button>
+                    </div>
                 </div>
-                <button class="btn-blue" onclick="joinRoomByCode()">Приєднатися</button>
-            </div>
-        </div>
 
-        <div id="tab-rules" class="tab-content text-left">
-            <h2 style="color:#10b981; text-align:center; margin-top:0;">📜 ПРАВИЛА ГРИ</h2>
-            <div style="height: 300px; overflow-y: auto; padding-right: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.6; text-align: left;">
-                <p><b>🎯 Мета гри:</b> Стати найбагатшим магнатом Полтави та збанкрутувати всіх конкурентів.</p>
-                <p><b>🏙️ Нерухомість:</b> Купуйте вільні ділянки. Якщо інший гравець стає на вашу ділянку, він платить вам оренду.</p>
-                <p><b>👑 Монополія та Будівництво:</b> Зберіть усі ділянки одного кольору, щоб створити Монополію. Тоді базова оренда подвоюється, і ви отримуєте право будувати будинки (максимум 5 — це Готель). Будувати треба рівномірно!</p>
-                <p><b>📈 Фондова Біржа:</b> 
-                    <br>• <b>PTC (Крипта):</b> Курс стрибає випадково щоходу. Можна швидко заробити або втратити все.
-                    <br>• <b>RTL, TRN, PST:</b> Акції отримують % з орендних платежів гравців. Якщо набігає великий пул, виплачуються солідні дивіденди!
-                </p>
-                <p><b>🏦 Банка (Депозит):</b> Покладіть гроші на депозит. Щоразу, коли ви проходите СТАРТ, ваш вклад збільшується на 5%.</p>
-                <p><b>💳 Кредит:</b> Завжди можна взяти позику в банку на i₴2000. Але пам'ятайте: через 5 ходів банк автоматично спише i₴2500 з вашого рахунку!</p>
-                <p><b>🤝 Трейди:</b> Не вистачає ділянки для монополії? Відкривайте меню Трейдів, пропонуйте обмін ділянками та грошима з іншими гравцями.</p>
-            </div>
-        </div>
-
-        <div id="tab-settings" class="tab-content">
-            <div class="setup-row">
-                <label>📻 Радіо:</label>
-                <select id="setting-radio" onchange="changeRadio()">
-                    <option value="" selected>Вимкнено</option>
-                    <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
-                    <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
-                </select>
-            </div>
-            <div class="setup-row">
-                <label>🎵 Музика:</label>
-                <input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()">
-                <span id="vol-bgm-val">20%</span>
-            </div>
-            <div class="setup-row">
-                <label>🔊 Звуки:</label>
-                <input type="range" id="vol-sfx" min="0" max="100" value="80" onchange="updateVolume()">
-                <span id="vol-sfx-val">80%</span>
-            </div>
-            <hr style="border-color:#334155; margin:15px 0;">
-            <div class="setup-row">
-                <label>Джекпот Парковки:</label>
-                <select id="setting-jackpot">
-                    <option value="1">100% (Всі штрафи)</option>
-                    <option value="0.5" selected>50% (Половина)</option>
-                    <option value="0">Вимкнено</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="tab-dev" class="tab-content dev-container">
-            <div class="royal-dev-card">
-                <h2 style="color:#f59e0b; font-weight:900; letter-spacing:2px; text-shadow: 0 0 15px rgba(245,158,11,0.8); margin: 0 0 15px 0;">👑 РОЗРОБНИК 👑</h2>
-                
-                <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" style="width:90px; filter: drop-shadow(0 0 20px #ef4444); margin-bottom: 10px;">
-                
-                <h1 style="margin:5px 0; color:#fff; font-size:26px;">NikAndLos</h1>
-                <p style="font-size:16px; color:#cbd5e1; margin-bottom: 5px;">Творець гри <b>"Економіка Полтави"</b></p>
-                <p style="font-size:14px; font-weight:bold; color:#10b981; margin-top:0;">📍 Зроблено в Полтаві 🇺🇦</p>
-                
-                <div style="margin-top:25px; padding: 20px; background: rgba(0,0,0,0.6); border-radius: 12px; border: 1px solid #ef4444; box-shadow: inset 0 0 15px rgba(239,68,68,0.2);">
-                    <p style="margin-top:0; font-size:13px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">Підписуйтесь на канал:</p>
-                    <a href="https://youtube.com/@nikolosbond" target="_blank" class="btn-red" style="text-decoration:none; display:inline-block; font-size: 20px; font-weight: 900; padding: 15px 30px; box-shadow: 0 0 25px rgba(239,68,68,0.7); text-transform:uppercase;">▶ NikAndLos</a>
+                <div id="tab-shop" class="tab-content" style="display:none;">
+                    <div id="shop-auth-warning" style="color: #f59e0b; margin-bottom: 15px;">Увійдіть в профіль, щоб купувати!</div>
+                    <div id="shop-container" style="display:none;">
+                        <div style="background: rgba(16,185,129,0.1); padding: 10px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #10b981;">
+                            Баланс: <b id="shop-balance" style="color: #10b981;">0 🥟</b>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" id="shop-items-grid"></div>
+                    </div>
                 </div>
-                
-                <p style="font-size:11px; color:#64748b; margin-top:25px;">2026 рік.</p>
+
+                <div id="tab-profile" class="tab-content" style="display:none;">
+                    <div id="auth-form">
+                        <h3 style="margin-top: 0;">Вхід в акаунт</h3>
+                        <input type="text" id="auth-nick" placeholder="Твій нікнейм" style="width: 100%; padding: 10px; margin-bottom: 10px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        <input type="password" id="auth-pin" placeholder="PIN (4 цифри)" maxlength="4" style="width: 100%; padding: 10px; margin-bottom: 15px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                        <button class="btn-blue" onclick="loginAction()" style="width: 100%;">Увійти / Реєстрація</button>
+                    </div>
+                    <div id="profile-info" style="display:none; text-align: left;">
+                        <h3 style="color: #a855f7; margin-top: 0;">Твій Профіль</h3>
+                        <p>Нік: <b id="user-display-name">---</b></p>
+                        <p>Галушки: <b id="user-coins" style="color: #10b981;">0 🥟</b></p>
+                        <p>Перемоги: <b id="user-wins">0</b></p>
+                        <button class="btn-red" onclick="logoutAction()" style="margin-top: 20px; width: 100%;">Вийти з акаунту</button>
+                    </div>
+                </div>
+
+                <div id="tab-rules" class="tab-content text-left" style="display:none;">
+                    <h2 style="color:#10b981; text-align:center; margin-top:0;">📜 ПРАВИЛА ГРИ</h2>
+                    <div style="height: 300px; overflow-y: auto; padding-right: 10px; font-size: 13px; color: #cbd5e1; line-height: 1.6; text-align: left;">
+                        <p><b>🎯 Мета гри:</b> Стати найбагатшим магнатом Полтави та збанкрутувати всіх конкурентів.</p>
+                        <p><b>🏙️ Нерухомість:</b> Купуйте вільні ділянки. Якщо інший гравець стає на вашу ділянку, він платить вам оренду.</p>
+                        <p><b>👑 Монополія та Будівництво:</b> Зберіть усі ділянки одного кольору, щоб створити Монополію. Тоді базова оренда подвоюється, і ви отримуєте право будувати будинки (максимум 5 — це Готель). Будувати треба рівномірно!</p>
+                        <p><b>📈 Фондова Біржа:</b> 
+                            <br>• <b>PTC (Крипта):</b> Курс стрибає випадково щоходу. Можна швидко заробити або втратити все.
+                            <br>• <b>RTL, TRN, PST:</b> Акції отримують % з орендних платежів гравців. Якщо набігає великий пул, виплачуються солідні дивіденди!
+                        </p>
+                        <p><b>🏦 Банка (Депозит):</b> Покладіть гроші на депозит. Щоразу, коли ви проходите СТАРТ, ваш вклад збільшується на 5%.</p>
+                        <p><b>💳 Кредит:</b> Завжди можна взяти позику в банку на i₴2000. Але пам'ятайте: через 5 ходів банк автоматично спише i₴2500 з вашого рахунку!</p>
+                        <p><b>🤝 Трейди:</b> Не вистачає ділянки для монополії? Відкривайте меню Трейдів, пропонуйте обмін ділянками та грошима з іншими гравцями.</p>
+                    </div>
+                </div>
+
+                <div id="tab-settings" class="tab-content" style="display:none;">
+                    <div class="setup-row">
+                        <label>📻 Радіо:</label>
+                        <select id="setting-radio" onchange="changeRadio()" style="width: 100%; padding: 8px; margin-top: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                            <option value="" selected>Вимкнено</option>
+                            <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
+                            <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
+                        </select>
+                    </div>
+                    <div class="setup-row" style="margin-top: 15px;">
+                        <label>🎵 Музика:</label>
+                        <input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()" style="width: 100%; margin-top: 5px;">
+                        <span id="vol-bgm-val">20%</span>
+                    </div>
+                    <div class="setup-row" style="margin-top: 15px;">
+                        <label>🔊 Звуки:</label>
+                        <input type="range" id="vol-sfx" min="0" max="100" value="80" onchange="updateVolume()" style="width: 100%; margin-top: 5px;">
+                        <span id="vol-sfx-val">80%</span>
+                    </div>
+                    <hr style="border-color:#334155; margin:15px 0;">
+                    <div class="setup-row">
+                        <label>Джекпот Парковки:</label>
+                        <select id="setting-jackpot" style="width: 100%; padding: 8px; margin-top: 5px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+                            <option value="1">100% (Всі штрафи)</option>
+                            <option value="0.5" selected>50% (Половина)</option>
+                            <option value="0">Вимкнено</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="tab-dev" class="tab-content dev-container" style="display:none;">
+                    <div class="royal-dev-card">
+                        <h2 style="color:#f59e0b; font-weight:900; letter-spacing:2px; text-shadow: 0 0 15px rgba(245,158,11,0.8); margin: 0 0 15px 0;">👑 РОЗРОБНИК 👑</h2>
+                        
+                        <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" style="width:90px; filter: drop-shadow(0 0 20px #ef4444); margin-bottom: 10px;">
+                        
+                        <h1 style="margin:5px 0; color:#fff; font-size:26px;">NikAndLos</h1>
+                        <p style="font-size:16px; color:#cbd5e1; margin-bottom: 5px;">Творець гри <b>"Економіка Полтави"</b></p>
+                        <p style="font-size:14px; font-weight:bold; color:#10b981; margin-top:0;">📍 Зроблено в Полтаві 🇺🇦</p>
+                        
+                        <div style="margin-top:25px; padding: 20px; background: rgba(0,0,0,0.6); border-radius: 12px; border: 1px solid #ef4444; box-shadow: inset 0 0 15px rgba(239,68,68,0.2);">
+                            <p style="margin-top:0; font-size:13px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px;">Підписуйтесь на канал:</p>
+                            <a href="https://youtube.com/@nikolosbond" target="_blank" class="btn-red" style="text-decoration:none; display:inline-block; font-size: 20px; font-weight: 900; padding: 15px 30px; box-shadow: 0 0 25px rgba(239,68,68,0.7); text-transform:uppercase;">▶ NikAndLos</a>
+                        </div>
+                        
+                        <p style="font-size:11px; color:#64748b; margin-top:25px;">2026 рік.</p>
+                    </div>
+                </div>
+
             </div>
         </div>
+    </div>
 <div id="tab-profile" class="tab-content">
             <h2 style="color:#a855f7; text-align:center; margin-top:0;">👤 МІЙ ПРОФІЛЬ</h2>
             
