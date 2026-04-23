@@ -2141,7 +2141,7 @@ function switchTab(tabId) {
     // 2. Знімаємо підсвітку з усіх кнопок меню
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active-btn');
-        btn.style.background = 'transparent'; // Скидаємо фон
+        btn.style.background = 'transparent'; 
     });
 
     // 3. Показуємо ту сторінку, на яку натиснули
@@ -2155,28 +2155,27 @@ function switchTab(tabId) {
     let activeBtn = document.querySelector(`button[onclick="switchTab('${tabId}')"]`);
     if (activeBtn) {
         activeBtn.classList.add('active-btn');
-        activeBtn.style.background = 'rgba(59, 130, 246, 0.2)'; // Легка синя підсвітка
+        activeBtn.style.background = 'rgba(59, 130, 246, 0.2)'; 
         activeBtn.style.borderBottom = '3px solid #3b82f6';
     }
 }
 
 // Запускаємо першу вкладку (Локальна гра) при завантаженні сторінки
 document.addEventListener('DOMContentLoaded', () => {
-    switchTab('tab-local');
+    // ТУТ ВАЖЛИВО: назва має бути 'tab-newgame', як у твоєму HTML
+    switchTab('tab-newgame');
 });
+
 // === АВТОМАТИЧНИЙ ЛОГІН ТА СИНХРОНІЗАЦІЯ ГАЛУШОК ===
 function autoLogin() {
     let savedUser = JSON.parse(localStorage.getItem('poltavaUser'));
-    
-    // Якщо в пам'яті є збережений нік і пін - тихо стукаємо на сервер
     if (savedUser && savedUser.nick && savedUser.pin) {
         if (socket && socket.connected) {
             socket.emit('login', { nick: savedUser.nick, pin: savedUser.pin }, (res) => {
                 if (res && res.success) {
-                    currentUser = res.user; // Отримуємо всі свіжі дані (Галушки, Скіни)
-                    updateProfileUI(); // Оновлюємо Крамницю і Профіль
+                    currentUser = res.user;
+                    updateProfileUI(); 
                 } else {
-                    // Якщо щось пішло не так (наприклад, видалили базу)
                     currentUser = null;
                     localStorage.removeItem('poltavaUser');
                     updateProfileUI();
@@ -2186,12 +2185,12 @@ function autoLogin() {
     }
 }
 
-// Запускаємо авто-логін, щойно з'явився зв'язок із сервером
 if (socket) {
     socket.on('connect', () => {
         autoLogin();
     });
 }
+
 // === ЛОГІКА ДРУЗІВ (В РОЗРОБЦІ) ===
 function searchFriend() {
     let input = document.getElementById('friend-search-input');
@@ -2200,6 +2199,7 @@ function searchFriend() {
     }
     alert("Функція пошуку друзів у процесі розробки! 🛠️");
 }
+
 // === ОНЛАЙН: ЛОГІКА ЛОБІ ===
 function updateLobbyUI() {
     if (!currentLobby) return;
@@ -2225,8 +2225,7 @@ function updateLobbyUI() {
         });
         
         if (elStartBtn) {
-            // Показуємо кнопку СТАРТ тільки хосту і якщо є мінімум 2 гравці
-            if (amIHost && currentLobby.players.length >= 2) {
+            if (amIHost && currentLobby.players.length >= 1) { // >=1 для тестів, щоб ти міг сам зайти
                 elStartBtn.style.display = 'block';
             } else {
                 elStartBtn.style.display = 'none';
@@ -2237,7 +2236,7 @@ function updateLobbyUI() {
 
 function leaveLobby() {
     if(confirm("Точно вийти з кімнати?")) {
-        location.reload(); // Швидкий скид гри
+        location.reload(); 
     }
 }
 
@@ -2245,3 +2244,4 @@ function startOnlineGame() {
     if (currentLobby) {
         socket.emit('startGame', currentLobby.id);
     }
+}
