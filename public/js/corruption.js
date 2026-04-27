@@ -1,6 +1,5 @@
 // === СИСТЕМА КОРУПЦІЇ (corruption.js) ===
-var kumActive = false; 
-window.corruptionMode = null; 
+// kumActive та corruptionMode оголошені в globals.js
 
 function openCorruptionMenu() {
     if (!currentUser) return alert("Треба увійти в профіль, щоб використовувати зв'язки!");
@@ -35,6 +34,7 @@ function openCorruptionMenu() {
 }
 
 function buyKum() {
+    if (!socket) return alert("Немає з'єднання з сервером!");
     if (confirm("Точно витратити 150 🥟 на Дзвінок Куму?")) {
         socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: 150, serviceName: 'kum' }, (res) => {
             if (res.success) {
@@ -42,14 +42,15 @@ function buyKum() {
                 kumActive = true;
                 players[turn].corruptionUsed = true;
                 logMsg(`🕵️ <b>${players[turn].name}</b> "подзвонив куму". Наступна оренда безкоштовна!`);
-                updateUI(); broadcastState();
+                updateUI(); if (typeof broadcastState === "function") broadcastState();
             } else alert(res.msg);
         });
     }
 }
 
 function startCorruptionSelection(mode) {
-    window.corruptionMode = mode;
+    corruptionMode = mode;
+    window.corruptionMode = mode; // для сумісності
     closeModal();
     let msg = mode === 'raider' ? "🚜 Клікніть на ЧУЖИЙ БІЗНЕС на полі!" : "🚁 Клікніть на БУДЬ-ЯКУ клітинку!";
     let banner = document.createElement('div');
@@ -60,6 +61,7 @@ function startCorruptionSelection(mode) {
 }
 
 function cancelCorruption() {
+    corruptionMode = null;
     window.corruptionMode = null;
     let banner = document.getElementById('corruption-banner');
     if (banner) banner.remove();
@@ -71,9 +73,10 @@ function confirmRaider(idx) {
     if (!prop || !cell.price || prop.houses > 0 || prop.owner === players[turn].id) {
         return alert("❌ Неможливо захопити! Оберіть чужий бізнес без будинків.");
     }
+    if (!socket) return alert("Немає з'єднання!");
     let raiderPrice = cell.price * 2;
     if (players[turn].money < raiderPrice) return alert(`Не вистачає готівки (i₴)! Потрібно i₴${raiderPrice}.`);
-    
+
     if (confirm(`Захопити ${cell.name.replace('<br>',' ')}?\nСпишеться: 300 🥟 та i₴${raiderPrice}`)) {
         socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: 300, serviceName: 'raider' }, (res) => {
             if (res.success) {
@@ -83,9 +86,9 @@ function confirmRaider(idx) {
                 if (oldOwner) oldOwner.money += raiderPrice;
                 properties[idx] = { owner: players[turn].id, houses: 0, isMortgaged: false };
                 players[turn].corruptionUsed = true;
-                logMsg(`🚜 <b>РЕЙДЕРСТВО!</b> <b>${players[turn].name}</b> силоміць забрав <b>${cell.name.replace('<br>',' ')}</b> у <b>${oldOwner.name}</b>!`);
+                logMsg(`🚜 <b>РЕЙДЕРСТВО!</b> <b>${players[turn].name}</b> силоміць забрав <b>${cell.name.replace('<br>',' ')}</b> у <b>${oldOwner ? oldOwner.name : '?'}</b>!`);
                 playSound('sfx-bankrupt');
-                updateUI(); broadcastState();
+                updateUI(); if (typeof broadcastState === "function") broadcastState();
             } else alert(res.msg);
         });
     }
@@ -93,16 +96,19 @@ function confirmRaider(idx) {
 
 function confirmTeleport(idx) {
     let cell = mapData[idx];
+    if (!socket) return alert("Немає з'єднання!");
     if (confirm(`Переміститися на ${cell.name.replace('<br>',' ')}?\nСпишеться: 100 🥟`)) {
         socket.emit('useCorruption', { nick: currentUser.nick, pin: currentUser.pin, cost: 100, serviceName: 'teleport' }, (res) => {
             if (res.success) {
                 currentUser = res.user; updateProfileUI(); cancelCorruption();
                 let p = players[turn]; p.pos = idx; p.corruptionUsed = true;
                 logMsg(`🚁 <b>${p.name}</b> викликав Блатне Таксі і перелетів на <b>${cell.name.replace('<br>',' ')}</b>!`);
-                document.getElementById(`tokens-${idx}`).appendChild(document.getElementById(`token-${p.id}`));
+                let tokenEl = document.getElementById(`token-${p.id}`);
+                let targetEl = document.getElementById(`tokens-${idx}`);
+                if (tokenEl && targetEl) targetEl.appendChild(tokenEl);
                 playSound('sfx-step');
                 setTimeout(() => handleLanding(idx, p), 500);
-                updateUI(); broadcastState();
+                updateUI(); if (typeof broadcastState === "function") broadcastState();
             } else alert(res.msg);
         });
     }
