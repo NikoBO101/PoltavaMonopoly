@@ -58,156 +58,148 @@
         <div class="app-window-content" style="padding: 25px;">
                 
                 <div id="tab-newgame" class="tab-content active">
-                    <h3 style="color:#3b82f6; margin-top:0;">Налаштування нової гри</h3>
-                    <div class="setup-row" style="margin-bottom:15px;">
-                        <label>Кількість гравців:</label>
-                        <select id="player-count" onchange="generatePlayerInputs()" style="width: 100%; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155;">
-                            <option value="2">2</option><option value="3">3</option><option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
-                        </select>
-                    </div>
-                    <div class="setup-row" style="margin-bottom:15px;">
-                        <label>Стартовий капітал (i₴):</label>
-                        <input type="number" id="start-money" value="15000" step="1000" style="width: 100%; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155;">
-                    </div>
-                    <div class="player-inputs" id="player-names-container"></div>
-                    <button class="btn-blue" onclick="startLocalGame()" style="width: 100%; margin-top: 25px; padding: 18px; font-size: 18px; font-weight: bold;">🎮 ПОЧАТИ ЛОКАЛЬНУ ГРУ</button>
+                <h3 style="color:#3b82f6; margin-top:0; text-align:center;">Налаштування локальної гри</h3>
+                <div style="margin-bottom:15px;">
+                    <label style="color:#94a3b8; font-size:14px;">Кількість гравців:</label>
+                    <select id="player-count" onchange="generatePlayerInputs()" style="width: 100%; padding: 12px; margin-top:5px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius:8px;">
+                        <option value="2">2 гравці</option><option value="3">3 гравці</option><option value="4" selected>4 гравці</option><option value="5">5 гравців</option><option value="6">6 гравців</option>
+                    </select>
                 </div>
+                <div style="margin-bottom:20px;">
+                    <label style="color:#94a3b8; font-size:14px;">Стартовий капітал (i₴):</label>
+                    <input type="number" id="start-money" value="15000" step="1000" style="width: 100%; padding: 12px; margin-top:5px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius:8px;">
+                </div>
+                <div class="player-inputs" id="player-names-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <button class="btn-blue" onclick="startLocalGame()" style="width: 100%; margin-top: 25px; padding: 18px; font-size: 18px; font-weight: bold; border-radius:10px;">🎮 ПОЧАТИ ЛОКАЛЬНУ ГРУ</button>
+            </div>
 
-                <div id="tab-multiplayer" class="tab-content" style="display:none;">
-                    <h3 style="color:#3b82f6; margin-top:0;">Онлайн режим</h3>
-                    <div class="setup-row">
-                        <label>Ваш нікнейм:</label>
-                        <input type="text" id="mp-player-name" placeholder="Введіть ім'я..." style="width: 100%; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155;">
+            <div id="tab-multiplayer" class="tab-content" style="display:none;">
+                <h3 style="color:#3b82f6; margin-top:0; text-align:center;">Онлайн режим</h3>
+                <div style="margin-bottom:20px;">
+                    <label style="color:#94a3b8; font-size:14px;">Ваш нікнейм:</label>
+                    <input type="text" id="mp-player-name" placeholder="Введіть ім'я..." style="width: 100%; padding: 12px; margin-top:5px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius:8px;">
+                </div>
+                <div style="padding: 20px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 12px; margin-bottom:20px;">
+                    <h4 style="margin:0 0 15px 0; color:#10b981;">Створити власну кімнату</h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="text" id="mp-room-name" placeholder="Назва кімнати" style="flex: 1; padding: 12px; border-radius:8px; background: #0f172a; color: #fff; border: 1px solid #334155; min-width: 200px;">
+                        <input type="text" id="mp-room-pass" placeholder="Пароль (необов'язково)" style="flex: 1; padding: 12px; border-radius:8px; background: #0f172a; color: #fff; border: 1px solid #334155; min-width: 150px;">
                     </div>
-                    
-                    <div style="margin-top: 25px; padding: 20px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; border-radius: 12px;">
-                        <h4 style="margin:0 0 15px 0;">Створити власну кімнату</h4>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <input type="text" id="mp-room-name" placeholder="Назва кімнати" style="flex: 1; padding: 10px; min-width: 200px;">
-                            <input type="text" id="mp-room-pass" placeholder="Пароль (якщо треба)" style="flex: 1; padding: 10px; min-width: 150px;">
-                        </div>
-                        <button class="btn-green" onclick="createRoom()" style="width: 100%; margin-top: 15px; padding: 12px;">Створити та зайти</button>
-                    </div>
-
-                    <div style="margin-top: 25px;">
-                        <h4 style="margin-bottom:10px;">Доступні сервери:</h4>
-                        <div id="mp-room-list" class="scrollable-area" style="max-height: 250px; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px;">
-                            <p style="text-align:center; color:#64748b;">Оновлення списку кімнат...</p>
-                        </div>
+                    <button class="btn-green" onclick="createRoom()" style="width: 100%; margin-top: 15px; padding: 15px; font-weight:bold; border-radius:8px;">Створити та зайти</button>
+                </div>
+                <div>
+                    <h4 style="margin-bottom:10px; color:#cbd5e1;">Доступні сервери:</h4>
+                    <div id="mp-room-list" style="background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px;">
+                        <p style="text-align:center; color:#64748b;">Оновлення списку кімнат...</p>
                     </div>
                 </div>
+            </div>
 
-                <div id="tab-shop" class="tab-content" style="display:none;">
-                    <h3 style="color:#ef4444; text-align:center; margin-top:0;">🛒 КРАМНИЦЯ ПОЛТАВИ</h3>
-                    <div id="shop-auth-warning" style="text-align:center; background: rgba(245,158,11,0.15); padding: 15px; border-radius: 8px; color:#f59e0b; border: 1px solid #f59e0b;">
-                        ⚠️ Для покупок необхідно авторизуватися у вкладці 👤 Профіль!
+            <div id="tab-shop" class="tab-content" style="display:none;">
+                <h3 style="color:#ef4444; text-align:center; margin-top:0;">🛒 КРАМНИЦЯ ПОЛТАВИ</h3>
+                <div id="shop-auth-warning" style="text-align:center; background: rgba(245,158,11,0.15); padding: 15px; border-radius: 8px; color:#f59e0b; border: 1px solid #f59e0b;">
+                    ⚠️ Для покупок необхідно авторизуватися у вкладці 👤 Профіль!
+                </div>
+                <div id="shop-container" style="display:none;">
+                    <div style="background:rgba(16,185,129,0.15); padding:20px; border-radius:10px; margin-bottom:20px; text-align:center; border: 1px solid #10b981;">
+                        <span style="font-size:18px; color:#cbd5e1;">Твій баланс:</span> 
+                        <b id="shop-balance" style="font-size:28px; color:#10b981; margin-left:10px;">0 🥟</b>
                     </div>
-                    
-                    <div id="shop-container" style="display:none;">
-                        <div style="background:rgba(16,185,129,0.15); padding:15px; border-radius:10px; margin-bottom:20px; text-align:center; border: 1px solid #10b981;">
-                            <span style="font-size:18px; color:#cbd5e1;">Твій баланс:</span> 
-                            <b id="shop-balance" style="font-size:28px; color:#10b981; margin-left:10px;">0 🥟</b>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:20px;">
+                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; text-align:center; border:1px solid #f59e0b;">
+                            <div style="font-size:50px; margin-bottom:10px;">🟡</div>
+                            <h4 style="margin:0; color:#f59e0b; font-size:18px;">Золота Галушка</h4>
+                            <button class="btn-gold" onclick="buyItemAction('token_gold')" style="width:100%; padding:12px; font-weight:bold; border-radius:8px; margin-top:10px;">500 🥟</button>
+                            <button class="btn-blue" id="equip-token_gold" onclick="equipItemAction('token_gold')" style="display:none; width:100%; margin-top:10px; padding:12px; border-radius:8px;">Вдягнути</button>
                         </div>
-                        
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:20px;">
-                            <div style="background:#1e293b; padding:20px; border-radius:12px; text-align:center; border:1px solid #f59e0b; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                                <div style="font-size:50px; margin-bottom:10px;">🟡</div>
-                                <h4 style="margin:0; color:#f59e0b; font-size:18px;">Золота Галушка</h4>
-                                <p style="font-size:12px; color:#94a3b8; margin:8px 0;">Статус та розкіш</p>
-                                <button class="btn-gold" onclick="buyItemAction('token_gold')" style="width:100%; padding:10px; font-weight:bold;">500 🥟</button>
-                                <button class="btn-blue" id="equip-token_gold" onclick="equipItemAction('token_gold')" style="display:none; width:100%; margin-top:8px;">Вдягнути</button>
-                            </div>
-                            <div style="background:#1e293b; padding:20px; border-radius:12px; text-align:center; border:1px solid #3b82f6; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                                <div style="font-size:50px; margin-bottom:10px;">🚐</div>
-                                <h4 style="margin:0; color:#3b82f6; font-size:18px;">Жовтий Богдан</h4>
-                                <p style="font-size:12px; color:#94a3b8; margin:8px 0;">Рідний транспорт</p>
-                                <button class="btn-blue" onclick="buyItemAction('token_bogdan')" style="width:100%; padding:10px; font-weight:bold;">300 🥟</button>
-                                <button class="btn-green" id="equip-token_bogdan" onclick="equipItemAction('token_bogdan')" style="display:none; width:100%; margin-top:8px;">Вдягнути</button>
-                            </div>
-                            <div style="background:#1e293b; padding:20px; border-radius:12px; text-align:center; border:1px solid #10b981; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
-                                <div style="font-size:50px; margin-bottom:10px;">🚜</div>
-                                <h4 style="margin:0; color:#10b981; font-size:18px;">Танк</h4>
-                                <p style="font-size:12px; color:#94a3b8; margin:8px 0;">Для серйозних справ</p>
-                                <button class="btn-green" onclick="buyItemAction('token_tank')" style="width:100%; padding:10px; font-weight:bold;">1000 🥟</button>
-                                <button class="btn-blue" id="equip-token_tank" onclick="equipItemAction('token_tank')" style="display:none; width:100%; margin-top:8px;">Вдягнути</button>
-                            </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; text-align:center; border:1px solid #3b82f6;">
+                            <div style="font-size:50px; margin-bottom:10px;">🚐</div>
+                            <h4 style="margin:0; color:#3b82f6; font-size:18px;">Жовтий Богдан</h4>
+                            <button class="btn-blue" onclick="buyItemAction('token_bogdan')" style="width:100%; padding:12px; font-weight:bold; border-radius:8px; margin-top:10px;">300 🥟</button>
+                            <button class="btn-green" id="equip-token_bogdan" onclick="equipItemAction('token_bogdan')" style="display:none; width:100%; margin-top:10px; padding:12px; border-radius:8px;">Вдягнути</button>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:12px; text-align:center; border:1px solid #10b981;">
+                            <div style="font-size:50px; margin-bottom:10px;">🚜</div>
+                            <h4 style="margin:0; color:#10b981; font-size:18px;">Танк</h4>
+                            <button class="btn-green" onclick="buyItemAction('token_tank')" style="width:100%; padding:12px; font-weight:bold; border-radius:8px; margin-top:10px;">1000 🥟</button>
+                            <button class="btn-blue" id="equip-token_tank" onclick="equipItemAction('token_tank')" style="display:none; width:100%; margin-top:10px; padding:12px; border-radius:8px;">Вдягнути</button>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div id="tab-profile" class="tab-content" style="display:none;">
-                    <h3 style="color:#a855f7; text-align:center; margin-top:0;">👤 ПЕРСОНАЛЬНИЙ КАБІНЕТ</h3>
-                    <div id="auth-form" style="max-width: 450px; margin: 0 auto; background: rgba(30,41,59,0.5); padding: 25px; border-radius: 15px; border: 1px solid #334155;">
-                        <p style="text-align:center; color:#94a3b8; margin-top:0;">Увійдіть, щоб зберігати 🥟 Галушки</p>
-                        <input type="text" id="auth-nick" placeholder="Твій нікнейм" style="width: 100%; padding: 12px; margin-bottom: 12px; background: #0f172a; color: #fff; border: 1px solid #334155;">
-                        <input type="password" id="auth-pin" placeholder="PIN (4 цифри)" maxlength="4" style="width: 100%; padding: 12px; margin-bottom: 20px; background: #0f172a; color: #fff; border: 1px solid #334155;">
-                        <button class="btn-blue" onclick="loginAction()" style="width: 100%; padding: 15px; font-weight:bold;">УВІЙТИ В АКАУНТ</button>
-                    </div>
-                    
-                    <div id="profile-info" style="display:none; text-align: center;">
-                        <div style="background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.2)); padding: 30px; border-radius: 20px; border: 1px solid #a855f7; max-width: 500px; margin: 0 auto;">
-                            <h2 id="user-display-name" style="margin:0 0 10px 0; color:#fff; font-size:32px;">---</h2>
-                            <div style="display:flex; justify-content: space-around; margin-top:20px;">
-                                <div><p style="color:#94a3b8; margin:0;">🏆 Перемоги</p><b id="user-wins" style="font-size:24px; color:#fff;">0</b></div>
-                                <div><p style="color:#94a3b8; margin:0;">🥟 Галушки</p><b id="user-coins" style="font-size:24px; color:#10b981;">0</b></div>
-                            </div>
-                            <button class="btn-red" onclick="logoutAction()" style="margin-top:30px; padding:10px 40px;">Вийти з профілю</button>
+            <div id="tab-profile" class="tab-content" style="display:none;">
+                <h3 style="color:#a855f7; text-align:center; margin-top:0;">👤 ПЕРСОНАЛЬНИЙ КАБІНЕТ</h3>
+                <div id="auth-form" style="max-width: 400px; margin: 0 auto; background: rgba(0,0,0,0.3); padding: 25px; border-radius: 15px; border: 1px solid #334155;">
+                    <input type="text" id="auth-nick" placeholder="Твій нікнейм" style="width: 100%; padding: 15px; margin-bottom: 15px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius:8px;">
+                    <input type="password" id="auth-pin" placeholder="PIN (4 цифри)" maxlength="4" style="width: 100%; padding: 15px; margin-bottom: 20px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius:8px;">
+                    <button class="btn-blue" onclick="loginAction()" style="width: 100%; padding: 15px; font-weight:bold; border-radius:8px;">УВІЙТИ В АКАУНТ</button>
+                </div>
+                <div id="profile-info" style="display:none; text-align: center;">
+                    <div style="background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(59,130,246,0.2)); padding: 30px; border-radius: 20px; border: 1px solid #a855f7; max-width: 500px; margin: 0 auto;">
+                        <h2 id="user-display-name" style="margin:0 0 15px 0; color:#fff; font-size:32px;">---</h2>
+                        <div style="display:flex; justify-content: space-around; margin-top:20px; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px;">
+                            <div><p style="color:#94a3b8; margin:0;">🏆 Перемоги</p><b id="user-wins" style="font-size:28px; color:#fff;">0</b></div>
+                            <div><p style="color:#94a3b8; margin:0;">🥟 Галушки</p><b id="user-coins" style="font-size:28px; color:#10b981;">0</b></div>
                         </div>
+                        <button class="btn-red" onclick="logoutAction()" style="margin-top:30px; padding:15px 40px; border-radius:8px; font-weight:bold;">Вийти з профілю</button>
                     </div>
                 </div>
+            </div>
 
-                <div id="tab-friends" class="tab-content" style="display:none;">
-                    <h3 style="color:#f472b6; margin-top:0;">👥 СПИСОК ДРУЗІВ</h3>
-                    <div id="friends-auth-warning" style="text-align:center; color:#f59e0b; padding:20px;">⚠️ Функція доступна лише авторизованим гравцям.</div>
-                    <div id="friends-container" style="display:none;">
-                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                            <input type="text" id="friend-search-input" placeholder="Нікнейм друга..." style="flex:1; padding: 12px; background: #0f172a; color: #fff; border: 1px solid #334155;">
-                            <button class="btn-blue" onclick="searchFriend()" style="margin:0; padding: 0 25px;">🔍 Пошук</button>
-                        </div>
-                        <div id="friends-list-ui" class="scrollable-area" style="height: 300px; background:rgba(0,0,0,0.2); border-radius:10px; padding:15px; text-align:center;">
-                            <p style="color:#64748b; margin-top:100px;">У вас поки немає друзів. Додайте першого!</p>
-                        </div>
+            <div id="tab-friends" class="tab-content" style="display:none;">
+                <h3 style="color:#f472b6; margin-top:0; text-align:center;">👥 СПИСОК ДРУЗІВ</h3>
+                <div id="friends-auth-warning" style="text-align:center; color:#f59e0b; padding:20px; border:1px solid #f59e0b; border-radius:8px; background:rgba(245,158,11,0.1);">⚠️ Функція доступна лише авторизованим гравцям.</div>
+                <div id="friends-container" style="display:none;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="text" id="friend-search-input" placeholder="Нікнейм друга..." style="flex:1; padding: 15px; background: #0f172a; color: #fff; border: 1px solid #334155; border-radius:8px;">
+                        <button class="btn-blue" onclick="searchFriend()" style="margin:0; padding: 0 30px; border-radius:8px;">🔍</button>
+                    </div>
+                    <div id="friends-list-ui" style="background:rgba(0,0,0,0.3); border-radius:10px; padding:30px; text-align:center;">
+                        <p style="color:#64748b; margin:0;">У вас поки немає друзів. Додайте першого!</p>
                     </div>
                 </div>
+            </div>
 
-                <div id="tab-rules" class="tab-content" style="display:none;">
-                    <h2 style="color:#10b981; text-align:center; margin-top:0;">📜 ПРАВИЛА ГРИ</h2>
-                    <div class="scrollable-area" style="height: 380px; padding-right: 15px; font-size: 15px; color: #cbd5e1; line-height: 1.6; text-align: left;">
-                        <p><b>🎯 Мета гри:</b> Стати найбагатшим магнатом Полтави та збанкрутувати всіх конкурентів.</p>
-                        <p><b>🏙️ Нерухомість:</b> Купуйте вільні ділянки. Якщо інший гравець стає на вашу ділянку, він платить вам оренду.</p>
-                        <p><b>👑 Монополія та Будівництво:</b> Зберіть усі ділянки одного кольору, щоб створити Монополію. Тоді базова оренда подвоюється, і ви отримуєте право будувати будинки (максимум 5 — це Готель).</p>
-                        <p><b>🕵️ Корупція:</b> Доступна лише 1 раз за гру! Дозволяє захопити чужий бізнес за подвійну ціну або скористатися "Блатним таксі".</p>
-                        <p><b>📈 Фондова Біржа:</b> Слідкуйте за курсом PTC та купуйте акції RTL, TRN, PST для отримання пасивного доходу.</p>
-                    </div>
+            <div id="tab-rules" class="tab-content" style="display:none;">
+                <h2 style="color:#10b981; text-align:center; margin-top:0;">📜 ПРАВИЛА ГРИ</h2>
+                <div style="padding: 15px; font-size: 16px; color: #cbd5e1; line-height: 1.8; text-align: left; background: rgba(0,0,0,0.2); border-radius: 10px;">
+                    <p><b>🎯 Мета:</b> Стати найбагатшим та збанкрутувати конкурентів.</p>
+                    <p><b>🏙️ Нерухомість:</b> Купуйте ділянки. Якщо інший гравець стає на вашу ділянку, він платить оренду.</p>
+                    <p><b>👑 Монополія:</b> Зберіть усі ділянки одного кольору. Оренда подвоюється, можна будувати будинки.</p>
+                    <p><b>🕵️ Корупція:</b> Доступна лише 1 раз за гру! Дозволяє віджати чужий бізнес або скористатися "Блатним таксі".</p>
+                    <p><b>📈 Біржа:</b> Купуйте акції RTL, TRN, PST для пасивного доходу.</p>
                 </div>
+            </div>
 
-                <div id="tab-settings" class="tab-content" style="display:none;">
-                    <h3 style="margin-top:0;">⚙️ НАЛАШТУВАННЯ ГРИ</h3>
-                    <div class="setup-row" style="margin-bottom:20px;">
-                        <label>📻 Полтавське Радіо:</label>
-                        <select id="setting-radio" onchange="changeRadio()" style="width: 100%; padding: 12px; background:#0f172a; color:#fff;">
-                            <option value="" selected>Вимкнено</option>
-                            <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
-                            <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
-                        </select>
-                    </div>
-                    <div class="setup-row">
-                        <label>🎵 Гучність музики:</label>
-                        <input type="range" id="vol-bgm" min="0" max="100" value="20" onchange="updateVolume()" style="width: 100%; margin-top: 10px;">
-                    </div>
+            <div id="tab-settings" class="tab-content" style="display:none;">
+                <h3 style="margin-top:0; text-align:center;">⚙️ НАЛАШТУВАННЯ ГРИ</h3>
+                <div style="margin-bottom:25px;">
+                    <label style="color:#94a3b8;">📻 Полтавське Радіо:</label>
+                    <select id="setting-radio" onchange="changeRadio()" style="width: 100%; padding: 15px; background:#0f172a; color:#fff; border: 1px solid #334155; border-radius:8px; margin-top:8px;">
+                        <option value="" selected>Вимкнено</option>
+                        <option value="https://online.hitfm.ua/HitFM">Хіт FM</option>
+                        <option value="https://online.kissfm.ua/KissFM">Kiss FM</option>
+                    </select>
                 </div>
-
-                <div id="tab-dev" class="tab-content" style="display:none; text-align:center;">
-                    <div style="background: rgba(30,41,59,0.5); padding: 40px; border-radius: 20px; border: 2px solid #f59e0b;">
-                        <h2 style="color:#f59e0b; font-size:32px; margin-top:0;">👑 NikAndLos</h2>
-                        <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" style="width:100px; filter: drop-shadow(0 0 20px #ef4444); margin: 20px 0;">
-                        <h3 style="color:#fff;">Творець "Економіки Полтави"</h3>
-                        <p style="color:#94a3b8;">Версія гри: 2.7.5 (Corruption & Social Update)</p>
-                        <a href="https://youtube.com/@nikolosbond" target="_blank" class="btn-red" style="text-decoration:none; padding:15px 40px; display:inline-block; margin-top:20px; font-weight:bold; font-size:20px;">▶ ПІДПИСАТИСЯ</a>
-                    </div>
+                <div>
+                    <label style="color:#94a3b8;">🎵 Гучність ефектів:</label>
+                    <input type="range" id="vol-sfx" min="0" max="100" value="80" onchange="updateVolume()" style="width: 100%; margin-top: 15px;">
                 </div>
+            </div>
 
-            </div> </div> </div> <div id="lobby-screen" style="display:none; background: rgba(15, 23, 42, 0.95); border: 2px solid #10b981; border-radius: 20px; width: 90%; max-width: 550px; margin: 100px auto; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); text-align: center; z-index: 10000; position: relative;">
+            <div id="tab-dev" class="tab-content" style="display:none; text-align:center;">
+                <div style="background: rgba(30,41,59,0.5); padding: 40px 20px; border-radius: 20px; border: 2px solid #f59e0b;">
+                    <h2 style="color:#f59e0b; font-size:32px; margin-top:0;">👑 NikAndLos</h2>
+                    <img src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png" alt="YouTube" style="width:100px; filter: drop-shadow(0 0 20px #ef4444); margin: 20px 0;">
+                    <h3 style="color:#fff; margin-bottom:5px;">Творець "Економіки Полтави"</h3>
+                    <p style="color:#94a3b8; font-size:14px;">Версія гри: 2.8.5 (Adaptive Menu)</p>
+                    <a href="https://youtube.com/@nikolosbond" target="_blank" class="btn-red" style="text-decoration:none; padding:15px 40px; display:inline-block; margin-top:20px; font-weight:bold; font-size:18px; border-radius:10px;">▶ ПІДПИСАТИСЯ</a>
+                </div>
+            </div>
+
+        </div> </div> </div>
+    <div id="lobby-screen" style="display:none; background: rgba(15, 23, 42, 0.95); border: 2px solid #10b981; border-radius: 20px; width: 90%; max-width: 550px; margin: 100px auto; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.9); text-align: center; z-index: 10000; position: relative;">
         <h2 style="color: #10b981; margin-top: 0; font-size: 28px;">Кімната: <span id="lobby-room-name" style="color:#fff;">...</span></h2>
         
         <div style="background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; margin-bottom: 25px; border: 1px dashed #3b82f6;">
