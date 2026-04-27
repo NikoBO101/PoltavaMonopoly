@@ -56,18 +56,105 @@ if (socket) {
     
     socket.on('roomJoined', (room) => {
         currentLobby = room;
-        const mainMenu = document.getElementById('main-menu');
-        if (mainMenu) mainMenu.style.display = 'none';
-        const lobbyScreen = document.getElementById('lobby-screen');
-        if (lobbyScreen) lobbyScreen.style.display = 'block';
-        updateLobbyUI();
+        showLobbyScreen(room);
     });
 
-    socket.on('roomPlayersUpdated', (players) => {
+    socket.on('roomPlayersUpdated', (updatedPlayers) => {
         if (currentLobby) {
-            currentLobby.players = players;
+            currentLobby.players = updatedPlayers;
             updateLobbyUI();
         }
+    });
+
+    // === ОБРОБНИКИ ДЛЯ ОНЛАЙН-ГРИ ===
+    socket.on('gameStarted', (data) => {
+        if (!currentLobby) return;
+        isOnlineMode = true;
+        gameOver = false;
+        currentRound = data.currentRound || 1;
+        jackpotAmount = 0;
+
+        // Визначаємо свій socket.id серед гравців лобі
+        const myLobbyPlayer = currentLobby.players.find(p => p.id === socket.id);
+        myMultiplayerId = socket.id;
+
+        // Будуємо масив players з лобі
+        const startMoney = 15000;
+        players = currentLobby.players.map((lp, i) => ({
+            id: lp.id,
+            name: lp.name,
+            isBot: false,
+            color: playerColors[i % playerColors.length],
+            money: startMoney,
+            deposit: 0, loan: 0, loanTurns: 0,
+            pos: 0,
+            inJail: false, jailTurns: 0,
+            doublesCount: 0,
+            isBankrupt: false,
+            skipTurns: 0,
+            reverseMove: false,
+            portfolio: { PTC: 0, RTL: 0, TRN: 0, PST: 0, GOV: 0 },
+            stockHistory: [],
+            debtMode: false,
+            equippedToken: (lp.id === socket.id && currentUser && currentUser.equippedToken) ? currentUser.equippedToken : 'token_default',
+            corruptionUsed: false
+        }));
+
+        turn = data.turn || 0;
+
+        // Приховуємо лобі, показуємо гру
+        const lobbyScreen = document.getElementById('lobby-screen');
+        if (lobbyScreen) lobbyScreen.style.display = 'none';
+        const mainMenu = document.getElementById('main-menu');
+        if (mainMenu) mainMenu.style.display = 'none';
+        const gameContainer = document.getElementById('game-container');
+        if (gameContainer) gameContainer.style.display = 'flex';
+        const returnBtn = document.getElementById('return-game-btn');
+        if (returnBtn) returnBtn.style.display = 'block';
+
+        if (typeof unlockAudio === 'function') unlockAudio();
+        if (typeof initBoard === 'function') initBoard();
+        if (typeof updateUI === 'function') updateUI();
+        if (typeof logMsg === 'function') logMsg(`🌐 <b>Онлайн-гру розпочато!</b> Гравців: ${players.length}`);
+    });
+
+    // Сервер надіслав результат кубиків (тільки для поточного ходу)
+    socket.on('diceRolled', (data) => {
+        if (!isOnlineMode) return;
+        // Обробляємо кидок для ВСІХ гравців (синхронізація)
+        if (typeof processRollAndMove === 'function') {
+            processRollAndMove(data.v1, data.v2);
+        }
+    });
+
+    // Синхронізована дія гравця
+    socket.on('syncAction', (data) => {
+        if (!isOnlineMode) return;
+        if (data.senderId === socket.id) return; // своя дія вже виконана
+        if (typeof executeAction === 'function' && data.type && data.type !== 'think' && data.type !== 'chat') {
+            const p = players.find(pl => pl.id === data.senderId) || players[turn];
+            executeAction(p, data.type, data.idx, data.val);
+        } else if (data.type === 'chat') {
+            if (typeof logMsgLocal === 'function') logMsgLocal(data.val);
+        }
+    });
+
+    // Отримуємо повний стан гри від хоста
+    socket.on('updateGameState', (state) => {
+        if (!isOnlineMode) return;
+        if (state.players) players = state.players;
+        if (state.properties !== undefined) properties = state.properties;
+        if (state.turn !== undefined) turn = state.turn;
+        if (state.jackpotAmount !== undefined) jackpotAmount = state.jackpotAmount;
+        if (state.stocks) stocks = state.stocks;
+        if (state.currentRound !== undefined) currentRound = state.currentRound;
+        if (typeof updateUI === 'function') updateUI();
+        if (typeof updatePropertyColors === 'function') updatePropertyColors();
+    });
+
+    // Помилка входу в кімнату
+    socket.on('joinError', (msg) => {
+        alert(`❌ ${msg}`);
     });
 }
 
@@ -149,26 +236,43 @@ function joinRoomByCode() {
     socket.emit('joinRoom', { roomId: code, playerName: pName, password: document.getElementById('mp-join-pass').value.trim() }); 
 }
 
-// 5. Оновлення Лобі
+// 5. Показ лобі та оновлення UI
+function showLobbyScreen(room) {
+    // Ховаємо меню
+    const mainMenu = document.getElementById('main-menu');
+    if (mainMenu) mainMenu.style.display = 'none';
+    // Показуємо лобі
+    const lobbyScreen = document.getElementById('lobby-screen');
+    if (lobbyScreen) {
+        lobbyScreen.style.display = 'flex';
+        lobbyScreen.style.flexDirection = 'column';
+        lobbyScreen.style.alignItems = 'center';
+    }
+    updateLobbyUI();
+}
+
 function updateLobbyUI() {
     if (!currentLobby) return;
     const elName = document.getElementById('lobby-room-name');
     const elCode = document.getElementById('lobby-room-code');
     const elList = document.getElementById('lobby-players-list');
+    const elCount = document.getElementById('lobby-players-count');
     const elStartBtn = document.getElementById('lobby-start-btn');
 
     if (elName) elName.innerText = currentLobby.name;
     if (elCode) elCode.innerText = currentLobby.id;
+    if (elCount) elCount.innerText = currentLobby.players.length;
     if (elList) {
         elList.innerHTML = '';
         currentLobby.players.forEach(p => {
             let li = document.createElement('li');
-            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color:${p.id === socket.id ? '#10b981' : '#fff'}">${p.name}</b>`;
+            const isMe = socket && p.id === socket.id;
+            li.innerHTML = `${p.isHost ? '👑' : '👤'} <b style="color:${isMe ? '#10b981' : '#fff'}">${p.name}${isMe ? ' (Ти)' : ''}</b>`;
             elList.appendChild(li);
         });
     }
     if (elStartBtn) {
-        const isHost = currentLobby.players.find(p => p.id === socket.id && p.isHost);
+        const isHost = currentLobby.players.find(p => socket && p.id === socket.id && p.isHost);
         elStartBtn.style.display = (isHost && currentLobby.players.length >= 1) ? 'block' : 'none';
     }
 }
