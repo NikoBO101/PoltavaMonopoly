@@ -28,32 +28,34 @@
 
     <div id="online-badge" class="online-badge">🟢 Онлайн: 18</div>
 
-    <div id="main-menu" style="padding-top: 20px; width: 100%; height: 100vh; overflow-y: auto; padding-bottom: 50px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center;">
-        <div class="menu-header" style="margin-top: 20px;">ЕКОНОМІКА ПОЛТАВИ</div>
-        <div class="menu-subheader">MULTIPLAYER EDITION</div>
+    <div id="main-menu" style="position: absolute; top: 0; left: 0; right: 0; min-height: 100vh; background: #0f172a; padding: 20px 10px 80px 10px; z-index: 1000; overflow-y: auto;">
+    
+    <div class="menu-header" style="text-align: center; margin-top: 10px;">ЕКОНОМІКА ПОЛТАВИ</div>
+    <div class="menu-subheader" style="text-align: center; margin-bottom: 20px;">MULTIPLAYER EDITION</div>
 
-        <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 12px; border-radius: 8px; margin: 15px auto; width: 90%; max-width: 850px; font-weight: bold; text-align: center; font-size: 14px;">
-            ⚠️ УВАГА: На сервері ведуться технічні роботи. Деякі функції можуть не працювати.
+    <div style="background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5; padding: 12px; border-radius: 8px; max-width: 800px; margin: 0 auto 15px auto; font-weight: bold; text-align: center; font-size: 14px;">
+        ⚠️ На сервері ведуться технічні роботи. Деякі функції можуть не працювати.
+    </div>
+    
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button id="menu-music-toggle" class="btn-purple" style="padding: 8px 25px; font-size: 14px; border-radius: 20px;" onclick="toggleMenuMusic()">🎵 Музика: Увімкнути</button>
+        <button id="return-game-btn" class="btn-green" style="display:none; width: 100%; max-width: 800px; margin: 15px auto 0 auto; font-size: 18px; padding: 15px;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
+    </div>
+
+    <div class="app-window" style="background: #1e293b; border: 2px solid #3b82f6; border-radius: 15px; max-width: 800px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+        
+        <div class="menu-tabs" style="display: flex; flex-wrap: wrap; background: rgba(0,0,0,0.3); border-bottom: 2px solid #334155; border-radius: 13px 13px 0 0;">
+            <button class="tab-btn active" onclick="switchTab('tab-newgame')" style="flex: 1 1 25%; padding: 15px 5px;">🎮 Гра</button>
+            <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6; flex: 1 1 25%; padding: 15px 5px;">🌐 Онлайн</button>
+            <button class="tab-btn" onclick="switchTab('tab-shop')" style="color:#ef4444; flex: 1 1 25%; padding: 15px 5px;">🛒 Крамниця</button>
+            <button class="tab-btn" onclick="switchTab('tab-profile')" style="color:#a855f7; flex: 1 1 25%; padding: 15px 5px;">👤 Профіль</button>
+            <button class="tab-btn" onclick="switchTab('tab-friends')" style="color:#f472b6; flex: 1 1 25%; padding: 15px 5px;">👥 Друзі</button>
+            <button class="tab-btn" onclick="switchTab('tab-rules')" style="color:#10b981; flex: 1 1 25%; padding: 15px 5px;">📜 Правила</button>
+            <button class="tab-btn" onclick="switchTab('tab-settings')" style="flex: 1 1 25%; padding: 15px 5px;">⚙️ Налашт.</button>
+            <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b; flex: 1 1 25%; padding: 15px 5px;">👑 Автори</button>
         </div>
-        
-        <button id="menu-music-toggle" class="btn-purple" style="width: auto; margin-bottom: 15px; padding: 8px 25px; font-size: 14px; border-radius: 20px;" onclick="toggleMenuMusic()">🎵 Музика: Увімкнути</button>
-        
-        <button id="return-game-btn" class="btn-green" style="display:none; width: 90%; max-width: 850px; margin-bottom: 20px; font-size: 18px;" onclick="returnToGame()">🎲 ПОВЕРНУТИСЯ ДО ГРИ</button>
 
-        <div class="app-window" style="background: rgba(15, 23, 42, 0.95); border: 2px solid #3b82f6; border-radius: 15px; width: 95%; max-width: 850px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8); margin-bottom: 30px;">
-            
-            <div class="menu-tabs" style="display: flex; flex-wrap: wrap; background: #1e293b; border-bottom: 2px solid #334155;">
-                <button class="tab-btn active" onclick="switchTab('tab-newgame')" style="flex: 1 1 25%; padding: 12px 5px;">🎮 Гра</button>
-                <button class="tab-btn" onclick="switchTab('tab-multiplayer')" style="color:#3b82f6; flex: 1 1 25%; padding: 12px 5px;">🌐 Онлайн</button>
-                <button class="tab-btn" onclick="switchTab('tab-shop')" style="color:#ef4444; flex: 1 1 25%; padding: 12px 5px;">🛒 Крамниця</button>
-                <button class="tab-btn" onclick="switchTab('tab-profile')" style="color:#a855f7; flex: 1 1 25%; padding: 12px 5px;">👤 Профіль</button>
-                <button class="tab-btn" onclick="switchTab('tab-friends')" style="color:#f472b6; flex: 1 1 25%; padding: 12px 5px;">👥 Друзі</button>
-                <button class="tab-btn" onclick="switchTab('tab-rules')" style="color:#10b981; flex: 1 1 25%; padding: 12px 5px;">📜 Правила</button>
-                <button class="tab-btn" onclick="switchTab('tab-settings')" style="flex: 1 1 25%; padding: 12px 5px;">⚙️ Налашт.</button>
-                <button class="tab-btn" onclick="switchTab('tab-dev')" style="color:#f59e0b; flex: 1 1 25%; padding: 12px 5px;">👑 Автори</button>
-            </div>
-
-            <div class="app-window-content" style="padding: 25px; min-height: 450px;">
+        <div class="app-window-content" style="padding: 25px;">
                 
                 <div id="tab-newgame" class="tab-content active">
                     <h3 style="color:#3b82f6; margin-top:0;">Налаштування нової гри</h3>
